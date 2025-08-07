@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tetris - Classic Block Puzzle Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* --- General Styling & Variables --- */
+    :root {
+      --bg-gradient: linear-gradient(135deg, #2c1a4d, #1a1a3a);
+      --panel-bg: rgba(10, 10, 20, 0.4);
+      --text-primary: #ffffff;
+      --text-secondary: #c0c0d0;
+      --text-highlight: #4d94ff;
+      --accent-blue: #3d86f8;
+      --accent-yellow: #f8b400;
+      --accent-green: #00c853;
+      --accent-red: #ff3d71;
+      --border-color: rgba(255, 255, 255, 0.1);
+      --shadow-color: rgba(0, 0, 0, 0.2);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    /* --- Header --- */
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    header h1 {
+      font-size: 3.5rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #8e82ff, #43a6f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      color: transparent;
+    }
+
+    header p {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+    }
+
+    /* --- Main Game Layout --- */
+    .game-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 2rem;
+      width: 100%;
+      max-width: 1200px;
+    }
+
+    .panel {
+      background: var(--panel-bg);
+      border-radius: 16px;
+      padding: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    /* --- Left & Right Panels --- */
+    .left-panel,
+    .right-panel {
+      width: 280px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .info-card {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .info-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-header svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .card-value {
+      font-size: 2rem;
+      font-weight: 600;
+    }
+
+    .card-value.level {
+      color: var(--accent-blue);
+    }
+
+    .card-value.lines {
+      color: var(--accent-green);
+    }
+
+    .card-value.highscore {
+      color: var(--accent-yellow);
+    }
+
+    #next-piece-canvas {
+      background-color: #0d0d21;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      width: 100%;
+      aspect-ratio: 1.25 / 1;
+    }
+
+    .footer {
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    .footer a {
+      color: var(--text-secondary);
+      text-decoration: none;
+    }
+
+    /* --- Game Board (Middle) --- */
+    .game-board-container {
+      position: relative;
+      width: 360px;
+      /* BLOCK_SIZE * COLS */
+    }
+
+    #tetris-canvas {
+      width: 100%;
+      display: block;
+      border: 2px solid var(--border-color);
+      background-color: #0d0d21;
+      box-shadow: 0 10px 30px var(--shadow-color);
+    }
+
+    .game-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(10, 10, 20, 0.85);
+      -webkit-backdrop-filter: blur(5px);
+      backdrop-filter: blur(5px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      z-index: 10;
+      color: white;
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .game-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .overlay-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .overlay-text {
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+    }
+
+    .btn {
+      font-family: 'Poppins', sans-serif;
+      border: none;
+      border-radius: 8px;
+      padding: 0.8rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      width: 100%;
+      text-align: left;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-primary {
+      background-color: var(--accent-blue);
+      color: white;
+    }
+
+    .btn-secondary {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: var(--text-secondary);
+    }
+
+    #pause-btn {
+      background-color: var(--accent-yellow);
+      color: #1a1a3a;
+    }
+
+    /* --- Right Panel Controls --- */
+    .controls-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .controls-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-secondary);
+    }
+
+    .key {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      min-width: 50px;
+      text-align: center;
+    }
+
+    .touch-controls {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: auto auto;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .touch-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      width: 100%;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .touch-btn:active {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    #touch-left {
+      grid-column: 1 / 2;
+      grid-row: 2 / 3;
+    }
+
+    #touch-rotate {
+      grid-column: 2 / 3;
+      grid-row: 2 / 3;
+    }
+
+    #touch-right {
+      grid-column: 3 / 4;
+      grid-row: 2 / 3;
+    }
+
+    #touch-soft-drop {
+      grid-column: 1 / 3;
+      grid-row: 3 / 4;
+    }
+
+    #touch-hard-drop {
+      grid-column: 3 / 4;
+      grid-row: 3 / 4;
+      background-color: var(--accent-red);
+    }
+
+    /* --- Reponsiveness --- */
+    @media (max-width: 1200px) {
+      .game-wrapper {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .left-panel,
+      .right-panel {
+        width: 100%;
+        max-width: 450px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .left-panel>*,
+      .right-panel>* {
+        flex: 1 1 200px;
+      }
+
+      #touch-controls-container {
+        display: block;
+        /* Show touch controls on smaller screens */
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 1rem 0.5rem;
+      }
+
+      header h1 {
+        font-size: 2.5rem;
+      }
+
+      header p {
+        font-size: 1rem;
+      }
+
+      .game-wrapper {
+        gap: 1rem;
+      }
+
+      .game-board-container {
+        width: 95vw;
+      }
+
+      .left-panel,
+      .right-panel {
+        gap: 1rem;
+      }
+
+      .left-panel>*,
+      .right-panel>* {
+        flex: 1 1 150px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>Tetris</h1>
+    <p>Classic Block Puzzle Game</p>
+  </header>
+
+  <div class="game-wrapper">
+
+    <!-- Left Panel: Stats -->
+    <aside class="left-panel">
+      <div class="panel">
+        <div class="card-header">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z">
+            </path>
+            <path d="m12.001 14.502-2.5 2.5v-5l2.5 2.5zm-.001-5-2.5-2.5 5 2.5-2.5-2.5zm2.5 2.5 2.5-2.5v5l-2.5-2.5z">
+            </path>
+          </svg>
+          <span>Next Piece</span>
+        </div>
+        <canvas id="next-piece-canvas"></canvas>
+      </div>
+
+      <div class="panel">
+        <div class="info-card">
+          <div class="card-header">Score</div>
+          <div id="score" class="card-value">0</div>
+        </div>
+        <div class="info-card">
+          <div class="card-header">Level</div>
+          <div id="level" class="card-value level">1</div>
+        </div>
+        <div class="info-card">
+          <div class="card-header">Lines</div>
+          <div id="lines" class="card-value lines">0</div>
+        </div>
+        <div class="info-card">
+          <div class="card-header">High Score</div>
+          <div id="highscore" class="card-value highscore">0</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Middle Panel: Game Board -->
+    <main class="game-board-container">
+      <canvas id="tetris-canvas"></canvas>
+      <div id="game-overlay" class="game-overlay">
+        <div id="start-screen">
+          <h2 class="overlay-title">Ready to Play?</h2>
+          <p class="overlay-text">Use arrow keys or on-screen controls</p>
+          <button id="start-btn" class="btn btn-primary">Start Game</button>
+        </div>
+        <div id="pause-screen" style="display: none;">
+          <h2 class="overlay-title">Paused</h2>
+          <p class="overlay-text">Take a break!</p>
+        </div>
+        <div id="gameover-screen" style="display: none;">
+          <h2 class="overlay-title">Game Over</h2>
+          <p class="overlay-text">Your final score: <span id="final-score">0</span></p>
+          <button id="restart-btn" class="btn btn-primary">Play Again</button>
+        </div>
+      </div>
+      <div class="footer"><a href="https://muki.tw" target="_blank">MUKI space*</a></div>
+    </main>
+
+    <!-- Right Panel: Controls -->
+    <aside class="right-panel">
+      <div class="panel">
+        <div class="card-header">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z">
+            </path>
+            <path
+              d="M13.595 10.595 15 12l-1.405 1.405-1.59-1.59L13.595 10.595zM12 8l-1.405 1.405 1.59 1.59 1.405-1.405L12 8zm0 8-1.59-1.59L12 13l1.59 1.59L12 16zm-1.595-3.405L8 12l1.405-1.405 1.59 1.59z">
+            </path>
+          </svg>
+          <span>Controls</span>
+        </div>
+        <ul class="controls-list">
+          <li><span>Move</span><span class="key">← →</span></li>
+          <li><span>Soft Drop</span><span class="key">↓</span></li>
+          <li><span>Hard Drop</span><span class="key">Space</span></li>
+          <li><span>Rotate</span><span class="key">↑</span></li>
+        </ul>
+      </div>
+
+      <div class="panel">
+        <button id="pause-btn" class="btn">
+          <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+            fill="currentColor">
+            <path d="M8 7h3v10H8zm5 0h3v10h-3z"></path>
+          </svg>
+          <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+            fill="currentColor" style="display: none;">
+            <path d="M7 6v12l10-6z"></path>
+          </svg>
+          <span id="pause-btn-text">Pause Game</span>
+        </button>
+        <button id="new-game-btn" class="btn btn-secondary" style="margin-top: 1rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z">
+            </path>
+            <path d="M13.293 6.293 8.586 11H18v2H8.586l4.707 4.707-1.414 1.414L5.757 12l6.122-6.121z">
+            </path>
+          </svg>
+          <span>New Game</span>
+        </button>
+        <button id="sound-btn" class="btn btn-secondary" style="margin-top: 1rem;">
+          <svg id="sound-on-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+            fill="currentColor">
+            <path
+              d="M16 2.612v18.776c0 1.103-.897 2-2 2s-2-.897-2-2V2.612c0-1.103.897-2 2-2s2 .897 2 2zM8 7.612v8.776c0 1.103-.897 2-2 2s-2-.897-2-2V7.612c0-1.103.897-2 2-2s2 .897 2 2zm14 2v4.776c0 1.103-.897 2-2 2s-2-.897-2-2V9.612c0-1.103.897-2 2-2s2 .897 2 2z">
+            </path>
+          </svg>
+          <svg id="sound-off-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+            fill="currentColor" style="display: none;">
+            <path
+              d="m21.707 2.293-1.414-1.414L12 9.172 3.707.879 2.293 2.293 10.586 10.586 2.293 18.879l1.414 1.414L12 13.414l8.293 8.293 1.414-1.414L13.414 12l8.293-8.293z">
+            </path>
+          </svg>
+          <span id="sound-btn-text">Sound On</span>
+        </button>
+      </div>
+      <div class="panel" id="touch-controls-container">
+        <div class="card-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M15.5 2.031a2 2 0 0 1 1.01.267l.147.094L18.736 4a2 2 0 0 1 .59-1.928L18.89 2l-3.39-1.969zM8.5 2.031l3.39-1.97L8.11 2a2 2 0 0 0 1.626 2l2.08-.001-.148-.094a2 2 0 0 0-3.257.065zM17 5H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm-1 9H8v-2h8v2z">
+            </path>
+          </svg>
+          <span>Touch Controls</span>
+        </div>
+        <div class="touch-controls">
+          <button class="touch-btn" id="touch-left"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+              viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12.707 17.293 8.414 13H18v-2H8.414l4.293-4.293-1.414-1.414L4.586 12l6.707 6.707z">
+              </path>
+            </svg></button>
+          <button class="touch-btn" id="touch-rotate"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+              viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 4c-4.411 0-8 3.589-8 8s3.589 8 8 8a7.952 7.952 0 0 0 4.962-1.681l-1.414-1.414A5.961 5.961 0 0 1 12 18c-3.309 0-6-2.691-6-6s2.691-6 6-6a5.94 5.94 0 0 1 4.242 1.758L13 11h7V4l-2.394 2.394A7.962 7.962 0 0 0 12 4z">
+              </path>
+            </svg></button>
+          <button class="touch-btn" id="touch-right"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+              viewBox="0 0 24 24" fill="currentColor">
+              <path d="m11.293 17.293 1.414 1.414L19.414 12l-6.707-6.707-1.414 1.414L15.586 11H6v2h9.586z">
+              </path>
+            </svg></button>
+          <button class="touch-btn" id="touch-soft-drop"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+              viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M11.293 12.707 16 17.414V6h-2v11.586l-4.293-4.293-1.414 1.414L15.414 21H8.586l7.121-7.121-3.001-3.001z">
+              </path>
+            </svg></button>
+          <button class="touch-btn" id="touch-hard-drop"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+              viewBox="0 0 24 24" fill="currentColor">
+              <path d="M11.293 16.707 12 17.414l.707-.707 5-5-1.414-1.414L12 14.586 7.707 10.293 6.293 11.707l5 5z">
+              </path>
+              <path d="m6.293 7.707 5-5L12 1.414l.707.707 5 5-1.414 1.414L12 4.586 7.707 6.293z"></path>
+            </svg></button>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+      // --- DOM Elements ---
+      const canvas = document.getElementById('tetris-canvas');
+      const ctx = canvas.getContext('2d');
+      const nextCanvas = document.getElementById('next-piece-canvas');
+      const nextCtx = nextCanvas.getContext('2d');
+
+      const scoreEl = document.getElementById('score');
+      const levelEl = document.getElementById('level');
+      const linesEl = document.getElementById('lines');
+      const highscoreEl = document.getElementById('highscore');
+
+      const startBtn = document.getElementById('start-btn');
+      const restartBtn = document.getElementById('restart-btn');
+      const pauseBtn = document.getElementById('pause-btn');
+      const pauseBtnText = document.getElementById('pause-btn-text');
+      const newGameBtn = document.getElementById('new-game-btn');
+      const soundBtn = document.getElementById('sound-btn');
+      const soundBtnText = document.getElementById('sound-btn-text');
+
+      const overlay = document.getElementById('game-overlay');
+      const startScreen = document.getElementById('start-screen');
+      const pauseScreen = document.getElementById('pause-screen');
+      const gameOverScreen = document.getElementById('gameover-screen');
+      const finalScoreEl = document.getElementById('final-score');
+
+      const pauseIcon = document.getElementById('pause-icon');
+      const playIcon = document.getElementById('play-icon');
+      const soundOnIcon = document.getElementById('sound-on-icon');
+      const soundOffIcon = document.getElementById('sound-off-icon');
+
+      // Touch controls
+      const touchLeftBtn = document.getElementById('touch-left');
+      const touchRightBtn = document.getElementById('touch-right');
+      const touchRotateBtn = document.getElementById('touch-rotate');
+      const touchSoftDropBtn = document.getElementById('touch-soft-drop');
+      const touchHardDropBtn = document.getElementById('touch-hard-drop');
+
+      // --- Game Constants ---
+      const COLS = 10;
+      const ROWS = 20;
+      const BLOCK_SIZE = 36;
+      const NEXT_BLOCK_SIZE = 20;
+
+      const COLORS = [
+        null,
+        '#FF0D72', // T
+        '#0DC2FF', // I
+        '#0DFF72', // O
+        '#F538FF', // L
+        '#FF8E0D', // J
+        '#FFE138', // S
+        '#3877FF'  // Z
+      ];
+
+      const SHAPES = [
+        [], // Empty
+        [[1, 1, 1], [0, 1, 0]], // T
+        [[2, 2, 2, 2]], // I
+        [[3, 3], [3, 3]], // O
+        [[4, 0, 0], [4, 4, 4]], // L
+        [[0, 0, 5], [5, 5, 5]], // J
+        [[0, 6, 6], [6, 6, 0]], // S
+        [[7, 7, 0], [0, 7, 7]]  // Z
+      ];
+
+      const POINTS = {
+        SINGLE: 100,
+        DOUBLE: 300,
+        TRIPLE: 500,
+        TETRIS: 800
+      };
+
+      const LEVEL_THRESHOLD = 5;
+
+      // --- Game State ---
+      let board = [];
+      let currentPiece;
+      let nextPiece;
+      let score = 0;
+      let level = 1;
+      let lines = 0;
+      let highscore = localStorage.getItem('tetrisHighscore') || 0;
+      let dropCounter = 0;
+      let dropInterval = 1000;
+      let lastTime = 0;
+      let isPaused = false;
+      let isGameOver = true;
+      let isSoundOn = true;
+      let animationFrameId;
+
+      // --- Audio Context for Sounds ---
+      let audioCtx;
+      const sounds = {
+        move: new Audio('tetris/move.mp3'),
+        rotate: new Audio('tetris/rotate.mp3'),
+        drop: new Audio('tetris/drop.mp3'),
+        clear: new Audio('tetris/clear.mp3'),
+        gameOver: new Audio('tetris/gameover.mp3'),
+      };
+
+      sounds.move.volume = 0.5;
+      sounds.rotate.volume = 0.5;
+      sounds.drop.volume = 0.7;
+      sounds.clear.volume = 0.5;
+      sounds.gameOver.volume = 0.5;
+
+      function playSound(name) {
+        if (isSoundOn && sounds[name]) {
+          // Reset the sound to the beginning to allow it to be played again quickly
+          sounds[name].currentTime = 0;
+          sounds[name].play().catch(e => console.error("Audio play failed:", e));
+        }
+      }
+
+      // --- Game Classes & Functions ---
+      class Piece {
+        constructor(shape, color) {
+          this.shape = shape;
+          this.color = color;
+          this.x = Math.floor(COLS / 2) - Math.floor(this.shape[0].length / 2);
+          this.y = 0;
+        }
+      }
+
+      function createBoard() {
+        return Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+      }
+
+      function generatePiece() {
+        const pieceBag = [1, 2, 3, 4, 5, 6, 7];
+        const rand = Math.floor(Math.random() * pieceBag.length);
+        const index = pieceBag.splice(rand, 1)[0];
+        return new Piece(SHAPES[index], COLORS[index]);
+      }
+
+      function resetGame() {
+        board = createBoard();
+        score = 0;
+        level = 1;
+        lines = 0;
+        dropInterval = 1000;
+        isGameOver = false;
+        isPaused = false;
+
+        currentPiece = generatePiece();
+        nextPiece = generatePiece();
+
+        updateUI();
+        updateNextPieceCanvas();
+        hideOverlay();
+
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        gameLoop();
+      }
+
+      function gameLoop(time = 0) {
+        if (isPaused || isGameOver) return;
+
+        const deltaTime = time - lastTime;
+        lastTime = time;
+        dropCounter += deltaTime;
+
+        if (dropCounter > dropInterval) {
+          pieceDrop();
+        }
+
+        draw();
+        animationFrameId = requestAnimationFrame(gameLoop);
+      }
+
+      function drawBlock(ctx, x, y, color, size, isGhost = false) {
+        if (isGhost) {
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2;
+          ctx.strokeRect(x * size, y * size, size, size);
+        } else {
+          ctx.fillStyle = color;
+          ctx.fillRect(x * size, y * size, size, size);
+          ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+          ctx.strokeRect(x * size, y * size, size, size);
+        }
+      }
+
+      function draw() {
+        // Main canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        board.forEach((row, y) => {
+          row.forEach((value, x) => {
+            if (value > 0) {
+              drawBlock(ctx, x, y, COLORS[value], BLOCK_SIZE);
+            }
+          });
+        });
+
+        // Draw ghost piece
+        let ghostY = currentPiece.y;
+        while (isValidMove(currentPiece.shape, currentPiece.x, ghostY + 1)) {
+          ghostY++;
+        }
+        if (ghostY > currentPiece.y) {
+          currentPiece.shape.forEach((row, dy) => {
+            row.forEach((value, dx) => {
+              if (value) {
+                drawBlock(ctx, currentPiece.x + dx, ghostY + dy, 'rgba(255,255,255,0.3)', BLOCK_SIZE, true);
+              }
+            });
+          });
+        }
+
+        // Draw current piece
+        currentPiece.shape.forEach((row, y) => {
+          row.forEach((value, x) => {
+            if (value) {
+              drawBlock(ctx, currentPiece.x + x, currentPiece.y + y, currentPiece.color, BLOCK_SIZE);
+            }
+          });
+        });
+      }
+
+      function updateNextPieceCanvas() {
+        const h = nextCanvas.height;
+        const w = nextCanvas.width;
+        nextCtx.fillStyle = '#0d0d21';
+        nextCtx.fillRect(0, 0, w, h);
+
+        const shape = nextPiece.shape;
+        const pieceW = shape[0].length * NEXT_BLOCK_SIZE;
+        const pieceH = shape.length * NEXT_BLOCK_SIZE;
+        const startX = (w - pieceW) / 2;
+        const startY = (h - pieceH) / 2;
+
+        shape.forEach((row, y) => {
+          row.forEach((value, x) => {
+            if (value) {
+              drawBlock(nextCtx, startX / NEXT_BLOCK_SIZE + x, startY / NEXT_BLOCK_SIZE + y, nextPiece.color, NEXT_BLOCK_SIZE);
+            }
+          });
+        });
+      }
+
+      function isValidMove(shape, x, y) {
+        for (let row = 0; row < shape.length; row++) {
+          for (let col = 0; col < shape[row].length; col++) {
+            if (shape[row][col]) {
+              let newX = x + col;
+              let newY = y + row;
+              if (newX < 0 || newX >= COLS || newY >= ROWS || (board[newY] && board[newY][newX])) {
+                return false;
+              }
+            }
+          }
+        }
+        return true;
+      }
+
+      function pieceDrop() {
+        if (!isValidMove(currentPiece.shape, currentPiece.x, currentPiece.y + 1)) {
+          solidifyPiece();
+          removeLines();
+          currentPiece = nextPiece;
+          nextPiece = generatePiece();
+          updateNextPieceCanvas();
+          if (!isValidMove(currentPiece.shape, currentPiece.x, currentPiece.y)) {
+            gameOver();
+          }
+        } else {
+          currentPiece.y++;
+        }
+        dropCounter = 0;
+      }
+
+      function solidifyPiece() {
+        currentPiece.shape.forEach((row, y) => {
+          row.forEach((value, x) => {
+            if (value) {
+              board[currentPiece.y + y][currentPiece.x + x] = value;
+            }
+          });
+        });
+        playSound('drop');
+      }
+
+      function removeLines() {
+        let linesCleared = 0;
+        for (let y = ROWS - 1; y >= 0; y--) {
+          if (board[y].every(value => value > 0)) {
+            board.splice(y, 1);
+            board.unshift(Array(COLS).fill(0));
+            linesCleared++;
+            y++; // Re-check the new line at this position
+          }
+        }
+        if (linesCleared > 0) {
+          playSound('clear');
+          updateScore(linesCleared);
+          lines += linesCleared;
+          if (lines >= level * LEVEL_THRESHOLD) {
+            level++;
+            dropInterval = Math.max(200, 1000 - (level - 1) * 50);
+          }
+          updateUI();
+        }
+      }
+
+      function updateScore(cleared) {
+        let linePoints = 0;
+        if (cleared === 1) linePoints = POINTS.SINGLE;
+        else if (cleared === 2) linePoints = POINTS.DOUBLE;
+        else if (cleared === 3) linePoints = POINTS.TRIPLE;
+        else if (cleared >= 4) linePoints = POINTS.TETRIS;
+        score += linePoints * level;
+        updateUI();
+      }
+
+      function updateUI() {
+        scoreEl.textContent = score;
+        levelEl.textContent = level;
+        linesEl.textContent = lines;
+        highscoreEl.textContent = highscore;
+      }
+
+      function rotatePiece(piece) {
+        const shape = piece.shape;
+        const newShape = shape[0].map((_, colIndex) => shape.map(row => row[colIndex]).reverse());
+        if (isValidMove(newShape, piece.x, piece.y)) {
+          piece.shape = newShape;
+          playSound('rotate');
+        } else {
+          // Wall kick
+          if (isValidMove(newShape, piece.x + 1, piece.y)) {
+            piece.x++;
+            piece.shape = newShape;
+            playSound('rotate');
+          } else if (isValidMove(newShape, piece.x - 1, piece.y)) {
+            piece.x--;
+            piece.shape = newShape;
+            playSound('rotate');
+          }
+        }
+      }
+
+      function hardDrop() {
+        if (isGameOver || isPaused) return;
+        while (isValidMove(currentPiece.shape, currentPiece.x, currentPiece.y + 1)) {
+          currentPiece.y++;
+        }
+        pieceDrop();
+      }
+
+      function togglePause() {
+        if (isGameOver) return;
+        isPaused = !isPaused;
+        if (isPaused) {
+          cancelAnimationFrame(animationFrameId);
+          showOverlay('pause');
+          pauseBtnText.textContent = 'Resume Game';
+          pauseIcon.style.display = 'none';
+          playIcon.style.display = 'block';
+        } else {
+          hideOverlay();
+          gameLoop();
+          pauseBtnText.textContent = 'Pause Game';
+          pauseIcon.style.display = 'block';
+          playIcon.style.display = 'none';
+        }
+      }
+
+      function toggleSound() {
+        isSoundOn = !isSoundOn;
+        if (isSoundOn) {
+          soundBtnText.textContent = 'Sound On';
+          soundOnIcon.style.display = 'block';
+          soundOffIcon.style.display = 'none';
+        } else {
+          soundBtnText.textContent = 'Sound Off';
+          soundOnIcon.style.display = 'none';
+          soundOffIcon.style.display = 'block';
+        }
+      }
+
+      function gameOver() {
+        isGameOver = true;
+        cancelAnimationFrame(animationFrameId);
+        if (score > highscore) {
+          highscore = score;
+          localStorage.setItem('tetrisHighscore', highscore);
+          updateUI();
+        }
+        finalScoreEl.textContent = score;
+        showOverlay('gameover');
+        playSound('gameOver');
+      }
+
+      function showOverlay(type) {
+        overlay.classList.remove('hidden');
+        startScreen.style.display = 'none';
+        pauseScreen.style.display = 'none';
+        gameOverScreen.style.display = 'none';
+
+        if (type === 'start') startScreen.style.display = 'block';
+        if (type === 'pause') pauseScreen.style.display = 'flex';
+        if (type === 'gameover') gameOverScreen.style.display = 'block';
+      }
+
+      function hideOverlay() {
+        overlay.classList.add('hidden');
+      }
+
+      // --- Event Listeners ---
+      document.addEventListener('keydown', e => {
+        if (isGameOver || isPaused) return;
+        let moved = false;
+        if (e.key === 'ArrowLeft') {
+          if (isValidMove(currentPiece.shape, currentPiece.x - 1, currentPiece.y)) {
+            currentPiece.x--;
+            moved = true;
+          }
+        } else if (e.key === 'ArrowRight') {
+          if (isValidMove(currentPiece.shape, currentPiece.x + 1, currentPiece.y)) {
+            currentPiece.x++;
+            moved = true;
+          }
+        } else if (e.key === 'ArrowDown') {
+          pieceDrop();
+        } else if (e.key === 'ArrowUp') {
+          rotatePiece(currentPiece);
+          draw();
+        } else if (e.key === ' ') {
+          e.preventDefault();
+          hardDrop();
+        }
+        if (moved) {
+          playSound('move');
+          draw();
+        }
+      });
+
+      startBtn.addEventListener('click', () => {
+        resetGame();
+      });
+      restartBtn.addEventListener('click', resetGame);
+      newGameBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to start a new game?')) {
+          resetGame();
+        }
+      });
+      pauseBtn.addEventListener('click', togglePause);
+      soundBtn.addEventListener('click', toggleSound);
+
+      // Touch Control Listeners
+      touchLeftBtn.addEventListener('click', () => {
+        if (isValidMove(currentPiece.shape, currentPiece.x - 1, currentPiece.y)) currentPiece.x--;
+        playSound('move'); draw();
+      });
+      touchRightBtn.addEventListener('click', () => {
+        if (isValidMove(currentPiece.shape, currentPiece.x + 1, currentPiece.y)) currentPiece.x++;
+        playSound('move'); draw();
+      });
+      touchRotateBtn.addEventListener('click', () => { rotatePiece(currentPiece); draw(); });
+      touchSoftDropBtn.addEventListener('click', pieceDrop);
+      touchHardDropBtn.addEventListener('click', hardDrop);
+
+      // --- Initial Setup ---
+      function init() {
+        canvas.width = COLS * BLOCK_SIZE;
+        canvas.height = ROWS * BLOCK_SIZE;
+        nextCanvas.width = 5 * NEXT_BLOCK_SIZE;
+        nextCanvas.height = 4 * NEXT_BLOCK_SIZE;
+
+        ctx.scale(1, 1);
+        nextCtx.scale(1, 1);
+
+        highscoreEl.textContent = highscore;
+
+        showOverlay('start');
+      }
+
+      init();
+    });
+  </script>
+
+</body>
+
+</html>
