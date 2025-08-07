@@ -59,6 +59,84 @@
     .algorithm-speed {
       background: linear-gradient(90deg, #3b82f6 0%, #10b981 100%);
     }
+
+    /* ADD this inside the <style> tag */
+    .dark {
+      color-scheme: dark;
+    }
+
+    .dark body {
+      background-color: #111827;
+      color: #d1d5db;
+    }
+
+    .dark .bg-white {
+      background-color: #1f2937;
+    }
+
+    .dark .text-gray-900 {
+      color: #f9fafb;
+    }
+
+    .dark .text-gray-600,
+    .dark .text-gray-700 {
+      color: #9ca3af;
+    }
+
+    .dark .border,
+    .dark .border-2,
+    .dark .border-gray-200,
+    .dark .border-gray-300 {
+      border-color: #374151;
+    }
+
+    .dark .shadow-lg {
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
+    }
+
+    .dark .bg-gray-50 {
+      background-color: #374151;
+    }
+
+    .dark .bg-blue-50 {
+      background-color: rgba(59, 130, 246, 0.1);
+    }
+
+    .dark .text-blue-700 {
+      color: #93c5fd;
+    }
+
+    .dark .text-blue-900 {
+      color: #bfdbfe;
+    }
+
+    .dark .bg-green-50 {
+      background-color: rgba(16, 185, 129, 0.1);
+    }
+
+    .dark .text-green-700 {
+      color: #6ee7b7;
+    }
+
+    .dark .text-green-900 {
+      color: #a7f3d0;
+    }
+
+    .dark .bg-yellow-50 {
+      background-color: rgba(245, 158, 11, 0.1);
+    }
+
+    .dark .text-yellow-700 {
+      color: #fcd34d;
+    }
+
+    .dark .text-yellow-900 {
+      color: #fde68a;
+    }
+
+    .dark .custom-select {
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    }
   </style>
   <script>
     tailwind.config = {
@@ -152,15 +230,15 @@
             <div class="space-y-2 text-sm">
               <div class="flex justify-between">
                 <span>Maze Size:</span>
-                <span class="font-medium">21 × 21</span>
+                <span id="statMazeSize" class="font-medium">21 × 21</span>
               </div>
               <div class="flex justify-between">
                 <span>Total Cells:</span>
-                <span class="font-medium">441</span>
+                <span id="statTotalCells" class="font-medium">441</span>
               </div>
               <div class="flex justify-between">
                 <span>Path Cells:</span>
-                <span class="font-medium">221</span>
+                <span id="statPathCells" class="font-medium">221</span>
               </div>
             </div>
           </div>
@@ -185,13 +263,14 @@
                 <i class="ri-timer-line text-primary"></i>
               </div>
               <span class="text-sm text-gray-600">Time:
-                <span class="font-medium text-gray-900">0.00s</span></span>
+                <span id="timeValue" class="font-medium text-gray-900">0.00s</span></span>
             </div>
             <div class="flex items-center">
               <div class="w-6 h-6 flex items-center justify-center mr-2">
                 <i class="ri-footprint-line text-primary"></i>
               </div>
-              <span class="text-sm text-gray-600">Steps: <span class="font-medium text-gray-900">0</span></span>
+              <span class="text-sm text-gray-600">Steps: <span id="stepsValue"
+                  class="font-medium text-gray-900">0</span></span>
             </div>
             <div class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
               Ready to Start
@@ -311,27 +390,47 @@
     </div>
   </div>
 
+  <footer class="mt-8 text-center pb-8">
+    <div class="bg-white rounded-lg shadow-lg p-4 max-w-md mx-auto">
+      <div class="text-gray-600 mb-2">Created with ❤️ by MUKI Vibe Coding</div>
+      <div class="flex justify-center gap-4">
+        <a href="https://muki.tw" target="_blank" class="text-blue-500 hover:text-blue-600 flex items-center gap-1">
+          <i class="ri-global-line"></i>
+          MUKI space*
+        </a>
+        <a href="https://github.com/mukiwu/web-game-vibe-coding" target="_blank"
+          class="text-blue-500 hover:text-blue-600 flex items-center gap-1">
+          <i class="ri-github-fill"></i>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </footer>
+
   <script id="maze-generation">
     class MazeGenerator {
       constructor(size) {
-        this.size = size;
+        // Ensure size is odd
+        this.size = size % 2 === 0 ? size + 1 : size;
         this.maze = [];
         this.init();
       }
 
       init() {
+        // Initialize maze with all walls
         for (let i = 0; i < this.size; i++) {
           this.maze[i] = [];
           for (let j = 0; j < this.size; j++) {
-            this.maze[i][j] = 1;
+            this.maze[i][j] = 1; // 1 represents a wall
           }
         }
       }
 
       generate() {
         const stack = [];
+        // Start carving from an odd-numbered cell
         const start = [1, 1];
-        this.maze[start[0]][start[1]] = 0;
+        this.maze[start[0]][start[1]] = 0; // 0 represents a path
         stack.push(start);
 
         while (stack.length > 0) {
@@ -339,46 +438,54 @@
           const neighbors = this.getUnvisitedNeighbors(current);
 
           if (neighbors.length > 0) {
+            // Choose a random neighbor
             const next = neighbors[Math.floor(Math.random() * neighbors.length)];
             this.removeWall(current, next);
             this.maze[next[0]][next[1]] = 0;
             stack.push(next);
           } else {
+            // Backtrack
             stack.pop();
           }
         }
 
-        this.maze[this.size - 2][this.size - 2] = 2;
+        // Set start and exit points
+        // The start point (1,1) is already a path. We just need to mark the exit.
+        this.maze[this.size - 2][this.size - 2] = 2; // 2 represents the exit
+
+        // Ensure the start point is not a wall, though it should be already handled
+        if (this.maze[1][1] === 1) {
+          this.maze[1][1] = 0;
+        }
+
         return this.maze;
       }
 
+      // Get neighbors that are 2 cells away and unvisited
       getUnvisitedNeighbors([x, y]) {
         const neighbors = [];
         const directions = [
-          [0, 2],
-          [2, 0],
-          [0, -2],
-          [-2, 0],
+          [0, 2], // Down
+          [2, 0], // Right
+          [0, -2], // Up
+          [-2, 0], // Left
         ];
 
         for (const [dx, dy] of directions) {
           const nx = x + dx;
           const ny = y + dy;
-          if (
-            nx > 0 &&
-            nx < this.size - 1 &&
-            ny > 0 &&
-            ny < this.size - 1 &&
-            this.maze[nx][ny] === 1
-          ) {
+          // Check if the new cell is within bounds and is a wall (unvisited)
+          if (nx > 0 && nx < this.size - 1 && ny > 0 && ny < this.size - 1 && this.maze[nx][ny] === 1) {
             neighbors.push([nx, ny]);
           }
         }
         return neighbors;
       }
+
+      // Remove the wall between two cells
       removeWall([x1, y1], [x2, y2]) {
-        const wallX = (x1 + x2) / 2;
-        const wallY = (y1 + y2) / 2;
+        const wallX = x1 + (x2 - x1) / 2;
+        const wallY = y1 + (y2 - y1) / 2;
         this.maze[wallX][wallY] = 0;
       }
     }
@@ -393,47 +500,51 @@
         this.end = [this.size - 2, this.size - 2];
       }
 
+      // --- FIX for DFS ---
       async dfs(onStep) {
         const visited = new Set();
-        const path = [];
+        const parent = new Map();
         const stack = [this.start];
+        const startKey = `${this.start[0]},${this.start[1]}`;
+        visited.add(startKey);
 
         while (stack.length > 0) {
           const current = stack.pop();
-          const key = `${current[0]},${current[1]}`;
-
-          if (visited.has(key)) continue;
-          visited.add(key);
-          path.push(current);
+          const currentKey = `${current[0]},${current[1]}`;
 
           if (onStep) await onStep(current, "current");
 
           if (current[0] === this.end[0] && current[1] === this.end[1]) {
-            return path;
+            return this.reconstructPath(parent, current);
           }
 
-          const neighbors = this.getNeighbors(current);
+          const neighbors = this.getNeighbors(current).reverse(); // Reverse for more natural exploration
           for (const neighbor of neighbors) {
             const neighborKey = `${neighbor[0]},${neighbor[1]}`;
             if (!visited.has(neighborKey)) {
+              visited.add(neighborKey);
+              parent.set(neighborKey, current);
               stack.push(neighbor);
             }
           }
 
           if (onStep) await onStep(current, "visited");
         }
-        return null;
+        return null; // No path found
       }
 
       async bfs(onStep) {
         const visited = new Set();
         const queue = [this.start];
         const parent = new Map();
-        visited.add(`${this.start[0]},${this.start[1]}`);
+        const startKey = `${this.start[0]},${this.start[1]}`;
+        visited.add(startKey);
+
         while (queue.length > 0) {
           const current = queue.shift();
 
           if (onStep) await onStep(current, "current");
+
           if (current[0] === this.end[0] && current[1] === this.end[1]) {
             return this.reconstructPath(parent, current);
           }
@@ -453,57 +564,57 @@
         return null;
       }
 
+      // --- OPTIMIZATION for A* ---
       async aStar(onStep) {
-        const openSet = [this.start];
+        const openSet = new Map(); // Use a Map for O(1) lookups
         const closedSet = new Set();
         const gScore = new Map();
         const fScore = new Map();
         const parent = new Map();
 
         const startKey = `${this.start[0]},${this.start[1]}`;
+        openSet.set(startKey, this.start);
         gScore.set(startKey, 0);
         fScore.set(startKey, this.heuristic(this.start, this.end));
 
-        while (openSet.length > 0) {
-          openSet.sort((a, b) => {
-            const aKey = `${a[0]},${a[1]}`;
-            const bKey = `${b[0]},${b[1]}`;
-            return (fScore.get(aKey) || Infinity) - (fScore.get(bKey) || Infinity);
-          });
-
-          const current = openSet.shift();
-          const currentKey = `${current[0]},${current[1]}`;
+        while (openSet.size > 0) {
+          // Find the node in openSet with the lowest fScore
+          let currentKey;
+          let lowestFScore = Infinity;
+          for (const [key, node] of openSet) {
+            const score = fScore.get(key) || Infinity;
+            if (score < lowestFScore) {
+              lowestFScore = score;
+              currentKey = key;
+            }
+          }
+          const current = openSet.get(currentKey);
 
           if (onStep) await onStep(current, "current");
+
           if (current[0] === this.end[0] && current[1] === this.end[1]) {
             return this.reconstructPath(parent, current);
           }
 
+          openSet.delete(currentKey);
           closedSet.add(currentKey);
 
           const neighbors = this.getNeighbors(current);
           for (const neighbor of neighbors) {
             const neighborKey = `${neighbor[0]},${neighbor[1]}`;
-
             if (closedSet.has(neighborKey)) continue;
 
             const tentativeGScore = (gScore.get(currentKey) || Infinity) + 1;
-            if (
-              !openSet.some(
-                (node) => node[0] === neighbor[0] && node[1] === neighbor[1],
-              )
-            ) {
-              openSet.push(neighbor);
+
+            if (!openSet.has(neighborKey)) {
+              openSet.set(neighborKey, neighbor);
             } else if (tentativeGScore >= (gScore.get(neighborKey) || Infinity)) {
               continue;
             }
 
             parent.set(neighborKey, current);
             gScore.set(neighborKey, tentativeGScore);
-            fScore.set(
-              neighborKey,
-              tentativeGScore + this.heuristic(neighbor, this.end),
-            );
+            fScore.set(neighborKey, tentativeGScore + this.heuristic(neighbor, this.end));
           }
 
           if (onStep) await onStep(current, "visited");
@@ -514,35 +625,26 @@
       getNeighbors([x, y]) {
         const neighbors = [];
         const directions = [
-          [0, 1],
-          [1, 0],
-          [0, -1],
-          [-1, 0],
+          [0, 1], [1, 0], [0, -1], [-1, 0]
         ];
 
         for (const [dx, dy] of directions) {
           const nx = x + dx;
           const ny = y + dy;
-          if (
-            nx >= 0 &&
-            nx < this.size &&
-            ny >= 0 &&
-            ny < this.size &&
-            this.maze[nx][ny] !== 1
-          ) {
+          if (nx >= 0 && nx < this.size && ny >= 0 && ny < this.size && this.maze[nx][ny] !== 1) {
             neighbors.push([nx, ny]);
           }
         }
         return neighbors;
       }
+
       heuristic([x1, y1], [x2, y2]) {
-        return Math.abs(x1 - x2) + Math.abs(y1 - y2);
+        return Math.abs(x1 - x2) + Math.abs(y1 - y2); // Manhattan distance
       }
 
       reconstructPath(parent, end) {
         const path = [];
         let current = end;
-
         while (current) {
           path.unshift(current);
           const key = `${current[0]},${current[1]}`;
@@ -562,92 +664,113 @@
         this.size = 21;
         this.cellSize = 0;
         this.isRunning = false;
+        this.isSolving = false; // Add a specific state for solving
         this.currentAlgorithm = "dfs";
         this.speed = 5;
+
         this.visitedCells = new Set();
         this.solutionPath = [];
         this.startTime = 0;
         this.stepCount = 0;
+        this.solveTimer = null; // To hold the timer interval
+
+        this.performance = { dfs: '-', bfs: '-', astar: '-' }; // To store results
 
         this.initializeControls();
         this.generateMaze();
       }
 
       initializeControls() {
-        document
-          .getElementById("generateBtn")
-          .addEventListener("click", () => this.generateMaze());
-        document
-          .getElementById("solveBtn")
-          .addEventListener("click", () => this.solveMaze());
-        document
-          .getElementById("resetBtn")
-          .addEventListener("click", () => this.resetMaze());
+        document.getElementById("generateBtn").addEventListener("click", () => this.generateMaze());
+        document.getElementById("solveBtn").addEventListener("click", () => this.solveMaze());
+        document.getElementById("resetBtn").addEventListener("click", () => this.resetMaze());
 
-        document
-          .getElementById("algorithmSelect")
-          .addEventListener("change", (e) => {
-            this.currentAlgorithm = e.target.value;
-            this.updateAlgorithmInfo();
-          });
+        document.getElementById("algorithmSelect").addEventListener("change", (e) => {
+          this.currentAlgorithm = e.target.value;
+          this.updateAlgorithmInfo();
+        });
 
-        document
-          .getElementById("mazeSizeSelect")
-          .addEventListener("change", (e) => {
-            this.size = parseInt(e.target.value);
-            this.generateMaze();
-          });
+        document.getElementById("mazeSizeSelect").addEventListener("change", (e) => {
+          this.size = parseInt(e.target.value);
+          this.performance = { dfs: '-', bfs: '-', astar: '-' }; // Reset performance on size change
+          this.updatePerformanceStats();
+          this.generateMaze();
+        });
 
         document.getElementById("speedSlider").addEventListener("input", (e) => {
           this.speed = parseInt(e.target.value);
         });
+
+        window.addEventListener('themeChange', () => this.drawMaze());
       }
 
-      generateMaze() {
+      async generateMaze() {
+        if (this.isSolving) return;
+        this.isRunning = true;
         document.getElementById("loadingOverlay").classList.remove("hidden");
 
-        setTimeout(() => {
-          const generator = new MazeGenerator(this.size);
-          this.maze = generator.generate();
-          this.cellSize = 600 / this.size;
-          this.resetMaze();
-          this.drawMaze();
-          document.getElementById("loadingOverlay").classList.add("hidden");
-        }, 100);
+        // Use a short timeout to allow the loading overlay to render
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        const generator = new MazeGenerator(this.size);
+        this.maze = generator.generate();
+        this.cellSize = 600 / this.size;
+        this.resetMaze(false); // Reset without redrawing
+        this.drawMaze();
+        this.updateMazeStats();
+
+        document.getElementById("loadingOverlay").classList.add("hidden");
+        this.isRunning = false;
       }
 
-      resetMaze() {
-        this.isRunning = false;
+      resetMaze(fullReset = true) {
+        this.isSolving = false;
+        if (this.solveTimer) {
+          clearInterval(this.solveTimer);
+          this.solveTimer = null;
+        }
         this.visitedCells.clear();
         this.solutionPath = [];
         this.stepCount = 0;
         this.startTime = 0;
+
         this.updateStatus("Ready to Start", "green");
         this.updateTimer(0);
         this.updateSteps(0);
+
+        if (fullReset) {
+          this.performance = { dfs: '-', bfs: '-', astar: '-' };
+          this.updatePerformanceStats();
+        }
+
         if (this.maze) this.drawMaze();
       }
+
       async solveMaze() {
-        if (this.isRunning || !this.maze) return;
+        if (this.isRunning || this.isSolving || !this.maze) return;
+
+        this.resetMaze(false); // Soft reset before solving
 
         this.isRunning = true;
-        this.visitedCells.clear();
-        this.solutionPath = [];
-        this.stepCount = 0;
-        this.startTime = Date.now();
+        this.isSolving = true;
+        this.startTime = performance.now();
         this.updateStatus("Solving...", "blue");
+
+        this.solveTimer = setInterval(() => {
+          this.updateTimer((performance.now() - this.startTime) / 1000);
+        }, 100);
 
         const pathfinder = new PathfindingAlgorithms(this.maze);
         const delay = 110 - this.speed * 10;
 
         const onStep = async (cell, type) => {
+          if (!this.isSolving) throw new Error("Solve cancelled"); // Stop if reset is called
           this.stepCount++;
           if (type === "visited") {
             this.visitedCells.add(`${cell[0]},${cell[1]}`);
           }
           this.drawMaze(cell, type);
           this.updateSteps(this.stepCount);
-          this.updateTimer((Date.now() - this.startTime) / 1000);
           await new Promise((resolve) => setTimeout(resolve, delay));
         };
 
@@ -665,100 +788,115 @@
               break;
           }
         } catch (error) {
-          console.error("Pathfinding error:", error);
+          console.error("Pathfinding aborted or error:", error);
         }
+
+        clearInterval(this.solveTimer);
+        this.solveTimer = null;
+        const endTime = performance.now();
 
         if (solution) {
           this.solutionPath = solution;
           this.updateStatus("Solution Found!", "green");
-          this.drawMaze();
+
+          // --- FIX for Performance Stats Update ---
+          const timeTaken = ((endTime - this.startTime) / 1000).toFixed(2);
+          this.performance[this.currentAlgorithm] = `${timeTaken}s (${this.stepCount} steps)`;
+          this.updatePerformanceStats();
+
+          this.drawMaze(); // Redraw final solution path
         } else {
-          this.updateStatus("No Solution Found", "red");
+          if (this.isSolving) { // Only show "No Solution" if it wasn't cancelled
+            this.updateStatus("No Solution Found", "red");
+          }
         }
 
         this.isRunning = false;
+        this.isSolving = false;
       }
 
       drawMaze(currentCell = null, cellType = null) {
+        if (!this.ctx) return;
         this.ctx.clearRect(0, 0, 600, 600);
 
         for (let i = 0; i < this.size; i++) {
           for (let j = 0; j < this.size; j++) {
             const x = j * this.cellSize;
             const y = i * this.cellSize;
-
             this.ctx.fillStyle = this.getCellColor(i, j, currentCell, cellType);
             this.ctx.fillRect(x, y, this.cellSize, this.cellSize);
-
-            this.ctx.strokeStyle = "#e5e7eb";
-            this.ctx.lineWidth = 0.5;
-            this.ctx.strokeRect(x, y, this.cellSize, this.cellSize);
           }
         }
       }
+
       getCellColor(row, col, currentCell, cellType) {
-        if (this.maze[row][col] === 1) return "#1f2937";
-
-        if (
-          currentCell &&
-          currentCell[0] === row &&
-          currentCell[1] === col &&
-          cellType === "current"
-        ) {
-          return "#fbbf24";
-        }
-
+        // Solution path has highest priority
         if (this.solutionPath.some((cell) => cell[0] === row && cell[1] === col)) {
-          return "#f59e0b";
+          return "#f59e0b"; // solution
         }
+        if (this.maze[row][col] === 1) return document.documentElement.classList.contains('dark') ? '#374151' : '#1f2937'; // wall
 
+        // Visited states
+        if (currentCell && currentCell[0] === row && currentCell[1] === col && cellType === "current") {
+          return "#fbbf24"; // current
+        }
         if (this.visitedCells.has(`${row},${col}`)) {
-          return "#dbeafe";
+          return "#dbeafe"; // visited
         }
 
-        if (row === 1 && col === 1) return "#3b82f6";
-        if (this.maze[row][col] === 2) return "#10b981";
+        // Special cells
+        if (row === 1 && col === 1) return "#3b82f6"; // player
+        if (this.maze[row][col] === 2) return "#10b981"; // exit
 
-        return "#ffffff";
+        // Default path
+        return document.documentElement.classList.contains('dark') ? '#1f2937' : '#ffffff'; // path
       }
 
       updateStatus(message, color) {
-        const statusElement = document.querySelector(".bg-green-100");
+        const statusElement = document.querySelector('[class*="-800 rounded-full"]');
+        if (!statusElement) return;
         statusElement.textContent = message;
         statusElement.className = `px-3 py-1 bg-${color}-100 text-${color}-800 rounded-full text-sm font-medium`;
       }
 
       updateTimer(seconds) {
-        document.querySelector('[class*="Time:"] span').textContent =
-          `${seconds.toFixed(2)}s`;
+        const el = document.getElementById("timeValue");
+        if (el) el.textContent = `${seconds.toFixed(2)}s`;
       }
 
       updateSteps(steps) {
-        document.querySelector('[class*="Steps:"] span').textContent = steps;
+        const el = document.getElementById("stepsValue");
+        if (el) el.textContent = steps;
+      }
+
+      updateMazeStats() {
+        const totalCells = this.size * this.size;
+        const pathCells = this.maze.flat().filter(c => c !== 1).length;
+
+        const sizeEl = document.getElementById("statMazeSize");
+        const totalEl = document.getElementById("statTotalCells");
+        const pathEl = document.getElementById("statPathCells");
+
+        if (sizeEl) sizeEl.textContent = `${this.size} × ${this.size}`;
+        if (totalEl) totalEl.textContent = totalCells;
+        if (pathEl) pathEl.textContent = pathCells;
+      }
+
+      updatePerformanceStats() {
+        document.querySelector('.bg-blue-50.rounded span.text-blue-900').textContent = this.performance.dfs;
+        document.querySelector('.bg-green-50.rounded span.text-green-900').textContent = this.performance.bfs;
+        document.querySelector('.bg-yellow-50.rounded span.text-yellow-900').textContent = this.performance.astar;
       }
 
       updateAlgorithmInfo() {
         const info = {
-          dfs: {
-            name: "Depth-First Search",
-            description:
-              "DFS explores as far as possible along each branch before backtracking. Memory efficient but may not find shortest path.",
-          },
-          bfs: {
-            name: "Breadth-First Search",
-            description:
-              "BFS explores all neighbors at current depth before moving deeper. Guarantees shortest path but uses more memory.",
-          },
-          astar: {
-            name: "A* Pathfinding",
-            description:
-              "A* uses heuristics to guide search toward goal. Combines benefits of DFS and BFS for optimal pathfinding.",
-          },
+          dfs: { name: "Depth-First Search", description: "DFS explores as far as possible along each branch before backtracking. Memory efficient but may not find shortest path." },
+          bfs: { name: "Breadth-First Search", description: "BFS explores all neighbors at current depth before moving deeper. Guarantees shortest path but uses more memory." },
+          astar: { name: "A* Pathfinding", description: "A* uses heuristics to guide search toward goal. Combines benefits of DFS and BFS for optimal pathfinding." }
         };
 
         const current = info[this.currentAlgorithm];
-        document.querySelector(".bg-blue-50 h4").textContent =
-          `Current: ${current.name}`;
+        document.querySelector(".bg-blue-50 h4").textContent = `Current: ${current.name}`;
         document.querySelector(".bg-blue-50 p").textContent = current.description;
       }
     }
@@ -772,22 +910,36 @@
     document.addEventListener("DOMContentLoaded", () => {
       const toggle = document.getElementById("darkModeToggle");
       const toggleButton = toggle.querySelector("span");
-      let isDark = false;
 
-      toggle.addEventListener("click", () => {
-        isDark = !isDark;
+      const applyTheme = (isDark) => {
+        const root = document.documentElement;
         if (isDark) {
+          root.classList.add('dark');
           toggle.classList.remove("bg-gray-300");
           toggle.classList.add("bg-primary");
           toggleButton.classList.remove("translate-x-1");
           toggleButton.classList.add("translate-x-6");
         } else {
+          root.classList.remove('dark');
           toggle.classList.remove("bg-primary");
           toggle.classList.add("bg-gray-300");
           toggleButton.classList.remove("translate-x-6");
           toggleButton.classList.add("translate-x-1");
         }
+        // Dispatch a custom event that the game can listen to
+        window.dispatchEvent(new CustomEvent('themeChange'));
+      };
+
+      toggle.addEventListener("click", () => {
+        const isDark = !document.documentElement.classList.contains('dark');
+        localStorage.setItem('darkMode', isDark);
+        applyTheme(isDark);
       });
+
+      // Check for saved preference
+      if (localStorage.getItem('darkMode') === 'true') {
+        applyTheme(true);
+      }
     });
   </script>
 </body>
