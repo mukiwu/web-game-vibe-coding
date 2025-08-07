@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brick Breaker Game</title>
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#3B82F6",
+            secondary: "#10B981",
+          },
+          borderRadius: {
+            none: "0px",
+            sm: "4px",
+            DEFAULT: "8px",
+            md: "12px",
+            lg: "16px",
+            xl: "20px",
+            "2xl": "24px",
+            "3xl": "32px",
+            full: "9999px",
+            button: "8px",
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    :where([class^="ri-"])::before {
+      content: "\f3c2";
+    }
+
+    .game-canvas {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .brick {
+      transition: all 0.2s ease;
+    }
+
+    .brick:hover {
+      transform: scale(1.05);
+    }
+
+    .paddle {
+      background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+      border-radius: 20px;
+    }
+
+    .ball {
+      background: radial-gradient(circle, #FFE66D, #FF6B6B);
+      border-radius: 50%;
+      box-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+    }
+
+    .game-overlay {
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.9);
+    }
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen">
+  <div class="container mx-auto px-4 py-6 max-w-4xl">
+    <header class="text-center mb-8">
+      <h1 class="text-4xl font-['Pacifico'] text-gray-800 mb-2">
+        Brick Breaker Game
+      </h1>
+      <p class="text-gray-600">Classic brick breaker game, challenge your reaction speed!</p>
+    </header>
+
+    <div class="bg-white rounded-2xl shadow-2xl p-6 mb-6">
+      <div class="flex justify-between items-center mb-6">
+        <div class="bg-gradient-to-r from-primary to-blue-600 text-white px-6 py-3 rounded-xl">
+          <div class="text-sm opacity-90">Score</div>
+          <div class="text-2xl font-bold" id="score">0</div>
+        </div>
+        <div class="bg-gradient-to-r from-red-500 to-pink-600 text-white px-6 py-3 rounded-xl">
+          <div class="text-sm opacity-90">Life</div>
+          <div class="text-2xl font-bold flex items-center gap-1" id="lives">
+            <i class="ri-heart-fill"></i>
+            <i class="ri-heart-fill"></i>
+            <i class="ri-heart-fill"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="relative">
+        <canvas id="gameCanvas" class="w-full h-96 rounded-xl game-canvas border-4 border-gray-200" width="800"
+          height="400"></canvas>
+
+        <div id="gameOverlay" class="absolute inset-0 game-overlay rounded-xl flex items-center justify-center hidden">
+          <div class="text-center">
+            <div id="overlayTitle" class="text-3xl font-bold text-gray-800 mb-4">
+              Ready to start
+            </div>
+            <div id="overlayMessage" class="text-lg text-gray-600 mb-6">
+              Click the start button to start the game
+            </div>
+            <button id="overlayButton"
+              class="bg-primary hover:bg-blue-600 text-white px-8 py-3 rounded-button font-semibold whitespace-nowrap transition-colors">
+              Start Game
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-center items-center gap-4 mt-6">
+        <button id="startBtn"
+          class="bg-secondary hover:bg-green-600 text-white px-6 py-3 rounded-button font-semibold whitespace-nowrap transition-colors flex items-center gap-2">
+          <div class="w-5 h-5 flex items-center justify-center">
+            <i class="ri-play-fill"></i>
+          </div>
+          Start
+        </button>
+
+        <button id="pauseBtn"
+          class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-button font-semibold whitespace-nowrap transition-colors flex items-center gap-2 hidden">
+          <div class="w-5 h-5 flex items-center justify-center">
+            <i class="ri-pause-fill"></i>
+          </div>
+          Pause
+        </button>
+
+        <button id="resetBtn"
+          class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-button font-semibold whitespace-nowrap transition-colors flex items-center gap-2">
+          <div class="w-5 h-5 flex items-center justify-center">
+            <i class="ri-refresh-line"></i>
+          </div>
+          Restart
+        </button>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-lg p-6">
+      <h3 class="text-xl font-bold text-gray-800 mb-4">Game Instructions</h3>
+      <div class="grid md:grid-cols-2 gap-4 text-gray-600">
+        <div class="flex items-start gap-3">
+          <div class="w-6 h-6 flex items-center justify-center text-primary">
+            <i class="ri-mouse-line"></i>
+          </div>
+          <div>
+            <div class="font-semibold">Mouse Control</div>
+            <div class="text-sm">Move the mouse to control the paddle</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <div class="w-6 h-6 flex items-center justify-center text-secondary">
+            <i class="ri-keyboard-line"></i>
+          </div>
+          <div>
+            <div class="font-semibold">Keyboard Control</div>
+            <div class="text-sm">Use left and right arrow keys to control the paddle</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <div class="w-6 h-6 flex items-center justify-center text-yellow-500">
+            <i class="ri-trophy-line"></i>
+          </div>
+          <div>
+            <div class="font-semibold">Score Rules</div>
+            <div class="text-sm">Different colored bricks have different scores</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <div class="w-6 h-6 flex items-center justify-center text-red-500">
+            <i class="ri-heart-line"></i>
+          </div>
+          <div>
+            <div class="font-semibold">Life System</div>
+            <div class="text-sm">The ball will lose one life when it hits the ground</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script id="gameLogic">
+    class BrickBreaker {
+      constructor() {
+        this.canvas = document.getElementById("gameCanvas");
+        this.ctx = this.canvas.getContext("2d");
+        this.score = 0;
+        this.lives = 3;
+        this.gameState = "waiting";
+        this.soundEnabled = true;
+
+        this.paddle = {
+          x: this.canvas.width / 2 - 60,
+          y: this.canvas.height - 20,
+          width: 120,
+          height: 15,
+          speed: 8,
+        };
+
+        this.ball = {
+          x: this.canvas.width / 2,
+          y: this.canvas.height - 40,
+          radius: 8,
+          dx: 4,
+          dy: -4,
+        };
+
+        this.bricks = [];
+        this.keys = {};
+
+        this.initBricks();
+        this.bindEvents();
+        this.gameLoop();
+      }
+
+      initBricks() {
+        this.bricks = [];
+        const colors = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7"];
+        const rows = 5;
+        const cols = 10;
+        const brickWidth = (this.canvas.width - 40) / cols;
+        const brickHeight = 25;
+
+        for (let row = 0; row < rows; row++) {
+          for (let col = 0; col < cols; col++) {
+            this.bricks.push({
+              x: col * brickWidth + 20,
+              y: row * brickHeight + 50,
+              width: brickWidth - 5,
+              height: brickHeight - 5,
+              color: colors[row],
+              points: (5 - row) * 10,
+              visible: true,
+            });
+          }
+        }
+      }
+
+      bindEvents() {
+        this.canvas.addEventListener("mousemove", (e) => {
+          const rect = this.canvas.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          this.paddle.x = mouseX - this.paddle.width / 2;
+          this.paddle.x = Math.max(
+            0,
+            Math.min(this.canvas.width - this.paddle.width, this.paddle.x),
+          );
+        });
+
+        document.addEventListener("keydown", (e) => {
+          this.keys[e.key] = true;
+        });
+
+        document.addEventListener("keyup", (e) => {
+          this.keys[e.key] = false;
+        });
+      }
+
+      update() {
+        if (this.gameState !== "playing") return;
+
+        if (this.keys["ArrowLeft"]) {
+          this.paddle.x -= this.paddle.speed;
+        }
+        if (this.keys["ArrowRight"]) {
+          this.paddle.x += this.paddle.speed;
+        }
+
+        this.paddle.x = Math.max(
+          0,
+          Math.min(this.canvas.width - this.paddle.width, this.paddle.x),
+        );
+
+        this.ball.x += this.ball.dx;
+        this.ball.y += this.ball.dy;
+
+        if (
+          this.ball.x <= this.ball.radius ||
+          this.ball.x >= this.canvas.width - this.ball.radius
+        ) {
+          this.ball.dx = -this.ball.dx;
+        }
+
+        if (this.ball.y <= this.ball.radius) {
+          this.ball.dy = -this.ball.dy;
+        }
+
+        if (this.ball.y >= this.canvas.height - this.ball.radius) {
+          this.lives--;
+          this.updateLives();
+
+          if (this.lives <= 0) {
+            this.gameOver();
+          } else {
+            this.resetBall();
+          }
+        }
+
+        if (
+          this.ball.x >= this.paddle.x &&
+          this.ball.x <= this.paddle.x + this.paddle.width &&
+          this.ball.y + this.ball.radius >= this.paddle.y
+        ) {
+          this.ball.dy = -this.ball.dy;
+
+          const hitPos = (this.ball.x - this.paddle.x) / this.paddle.width;
+          this.ball.dx = (hitPos - 0.5) * 8;
+        }
+
+        this.bricks.forEach((brick) => {
+          if (!brick.visible) return;
+
+          if (
+            this.ball.x >= brick.x &&
+            this.ball.x <= brick.x + brick.width &&
+            this.ball.y >= brick.y &&
+            this.ball.y <= brick.y + brick.height
+          ) {
+            brick.visible = false;
+            this.ball.dy = -this.ball.dy;
+            this.score += brick.points;
+            this.updateScore();
+
+            if (this.bricks.every((b) => !b.visible)) {
+              this.gameWin();
+            }
+          }
+        });
+      }
+
+      draw() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        this.bricks.forEach((brick) => {
+          if (!brick.visible) return;
+
+          this.ctx.fillStyle = brick.color;
+          this.ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
+
+          this.ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+          this.ctx.fillRect(brick.x, brick.y, brick.width, brick.height / 2);
+        });
+
+        const gradient = this.ctx.createLinearGradient(
+          this.paddle.x,
+          this.paddle.y,
+          this.paddle.x + this.paddle.width,
+          this.paddle.y,
+        );
+        gradient.addColorStop(0, "#FF6B6B");
+        gradient.addColorStop(1, "#4ECDC4");
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(
+          this.paddle.x,
+          this.paddle.y,
+          this.paddle.width,
+          this.paddle.height,
+        );
+
+        const ballGradient = this.ctx.createRadialGradient(
+          this.ball.x,
+          this.ball.y,
+          0,
+          this.ball.x,
+          this.ball.y,
+          this.ball.radius,
+        );
+        ballGradient.addColorStop(0, "#FFE66D");
+        ballGradient.addColorStop(1, "#FF6B6B");
+        this.ctx.fillStyle = ballGradient;
+        this.ctx.beginPath();
+        this.ctx.arc(this.ball.x, this.ball.y, this.ball.radius, 0, Math.PI * 2);
+        this.ctx.fill();
+      }
+
+      gameLoop() {
+        this.update();
+        this.draw();
+        requestAnimationFrame(() => this.gameLoop());
+      }
+
+      start() {
+        this.gameState = "playing";
+        this.hideOverlay();
+        document.getElementById("startBtn").classList.add("hidden");
+        document.getElementById("pauseBtn").classList.remove("hidden");
+      }
+
+      pause() {
+        this.gameState = "paused";
+        this.showOverlay("遊戲暫停", "點擊繼續按鈕恢復遊戲", "繼續遊戲");
+        document.getElementById("startBtn").classList.remove("hidden");
+        document.getElementById("pauseBtn").classList.add("hidden");
+      }
+
+      reset() {
+        this.score = 0;
+        this.lives = 3;
+        this.gameState = "waiting";
+        this.resetBall();
+        this.initBricks();
+        this.updateScore();
+        this.updateLives();
+        this.showOverlay("準備開始", "點擊開始按鈕開始遊戲", "開始遊戲");
+        document.getElementById("startBtn").classList.remove("hidden");
+        document.getElementById("pauseBtn").classList.add("hidden");
+      }
+
+      resetBall() {
+        this.ball.x = this.canvas.width / 2;
+        this.ball.y = this.canvas.height - 40;
+        this.ball.dx = 4;
+        this.ball.dy = -4;
+      }
+
+      gameOver() {
+        this.gameState = "gameOver";
+        this.showOverlay("遊戲結束", `最終得分：${this.score} 分`, "重新開始");
+        document.getElementById("startBtn").classList.remove("hidden");
+        document.getElementById("pauseBtn").classList.add("hidden");
+      }
+
+      gameWin() {
+        this.gameState = "gameWin";
+        this.showOverlay("恭喜通關！", `完美得分：${this.score} 分`, "重新開始");
+        document.getElementById("startBtn").classList.remove("hidden");
+        document.getElementById("pauseBtn").classList.add("hidden");
+      }
+
+      showOverlay(title, message, buttonText) {
+        document.getElementById("overlayTitle").textContent = title;
+        document.getElementById("overlayMessage").textContent = message;
+        document.getElementById("overlayButton").textContent = buttonText;
+        document.getElementById("gameOverlay").classList.remove("hidden");
+      }
+
+      hideOverlay() {
+        document.getElementById("gameOverlay").classList.add("hidden");
+      }
+
+      updateScore() {
+        document.getElementById("score").textContent = this.score;
+      }
+
+      updateLives() {
+        const livesElement = document.getElementById("lives");
+        livesElement.innerHTML = "";
+        for (let i = 0; i < this.lives; i++) {
+          livesElement.innerHTML += '<i class="ri-heart-fill"></i>';
+        }
+        for (let i = this.lives; i < 3; i++) {
+          livesElement.innerHTML += '<i class="ri-heart-line opacity-50"></i>';
+        }
+      }
+    }
+
+    const game = new BrickBreaker();
+  </script>
+
+  <script id="gameControls">
+    document.addEventListener("DOMContentLoaded", () => {
+      const startBtn = document.getElementById("startBtn");
+      const pauseBtn = document.getElementById("pauseBtn");
+      const resetBtn = document.getElementById("resetBtn");
+      const overlayButton = document.getElementById("overlayButton");
+
+      startBtn.addEventListener("click", () => {
+        if (game.gameState === "waiting" || game.gameState === "paused") {
+          game.start();
+        }
+      });
+
+      pauseBtn.addEventListener("click", () => {
+        if (game.gameState === "playing") {
+          game.pause();
+        }
+      });
+
+      resetBtn.addEventListener("click", () => {
+        game.reset();
+      });
+
+      overlayButton.addEventListener("click", () => {
+        if (game.gameState === "waiting" || game.gameState === "paused") {
+          game.start();
+        } else {
+          game.reset();
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>

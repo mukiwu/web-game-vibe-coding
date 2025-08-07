@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maze Game - AI Pathfinding</title>
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet" />
+  <style>
+    :where([class^="ri-"])::before {
+      content: "\f3c2";
+    }
+
+    .maze-cell {
+      border: 1px solid #e5e7eb;
+      transition: all 0.2s ease;
+    }
+
+    .wall {
+      background-color: #1f2937;
+    }
+
+    .path {
+      background-color: #ffffff;
+    }
+
+    .player {
+      background-color: #3b82f6;
+    }
+
+    .exit {
+      background-color: #10b981;
+    }
+
+    .visited {
+      background-color: #dbeafe;
+    }
+
+    .current {
+      background-color: #fbbf24;
+    }
+
+    .solution {
+      background-color: #f59e0b;
+    }
+
+    .custom-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 0.7rem center;
+      background-size: 1em;
+    }
+
+    .algorithm-speed {
+      background: linear-gradient(90deg, #3b82f6 0%, #10b981 100%);
+    }
+  </style>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#3b82f6",
+            secondary: "#10b981",
+          },
+          borderRadius: {
+            none: "0px",
+            sm: "4px",
+            DEFAULT: "8px",
+            md: "12px",
+            lg: "16px",
+            xl: "20px",
+            "2xl": "24px",
+            "3xl": "32px",
+            full: "9999px",
+            button: "8px",
+          },
+        },
+      },
+    };
+  </script>
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+  <div class="container mx-auto px-4 py-6">
+    <header class="text-center mb-8">
+      <h1 class="text-4xl font-bold text-gray-900 mb-2">
+        <span class="font-['Pacifico'] text-primary">logo</span>
+        Maze Pathfinding Game
+      </h1>
+      <p class="text-gray-600">
+        Explore different algorithms to solve randomly generated mazes
+      </p>
+    </header>
+
+    <div class="flex gap-6 max-w-7xl mx-auto">
+      <div class="w-80 bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <div class="w-5 h-5 flex items-center justify-center mr-2">
+            <i class="ri-information-line text-primary"></i>
+          </div>
+          Algorithm Info
+        </h3>
+
+        <div class="space-y-4">
+          <div class="p-4 bg-blue-50 rounded-lg">
+            <h4 class="font-medium text-blue-900 mb-2">
+              Current: Depth-First Search
+            </h4>
+            <p class="text-sm text-blue-700">
+              DFS explores as far as possible along each branch before
+              backtracking. Memory efficient but may not find shortest path.
+            </p>
+          </div>
+
+          <div class="space-y-3">
+            <h4 class="font-medium text-gray-900">Legend</h4>
+            <div class="grid grid-cols-2 gap-2 text-sm">
+              <div class="flex items-center">
+                <div class="w-4 h-4 bg-gray-800 rounded mr-2"></div>
+                <span>Wall</span>
+              </div>
+              <div class="flex items-center">
+                <div class="w-4 h-4 bg-white border rounded mr-2"></div>
+                <span>Path</span>
+              </div>
+              <div class="flex items-center">
+                <div class="w-4 h-4 bg-blue-500 rounded mr-2"></div>
+                <span>Player</span>
+              </div>
+              <div class="flex items-center">
+                <div class="w-4 h-4 bg-green-500 rounded mr-2"></div>
+                <span>Exit</span>
+              </div>
+              <div class="flex items-center">
+                <div class="w-4 h-4 bg-blue-100 rounded mr-2"></div>
+                <span>Visited</span>
+              </div>
+              <div class="flex items-center">
+                <div class="w-4 h-4 bg-yellow-400 rounded mr-2"></div>
+                <span>Solution</span>
+              </div>
+            </div>
+          </div>
+          <div class="p-4 bg-gray-50 rounded-lg">
+            <h4 class="font-medium text-gray-900 mb-2">Statistics</h4>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span>Maze Size:</span>
+                <span class="font-medium">21 × 21</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Total Cells:</span>
+                <span class="font-medium">441</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Path Cells:</span>
+                <span class="font-medium">221</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4 bg-green-50 rounded-lg">
+            <h4 class="font-medium text-green-900 mb-2">Quick Tutorial</h4>
+            <ol class="text-sm text-green-700 space-y-1">
+              <li>1. Select an algorithm</li>
+              <li>2. Generate a new maze</li>
+              <li>3. Watch the AI solve it</li>
+              <li>4. Compare performance</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex-1 bg-white rounded-lg shadow-lg p-6">
+        <div class="flex items-center justify-between mb-6">
+          <div class="flex items-center space-x-4">
+            <div class="flex items-center">
+              <div class="w-6 h-6 flex items-center justify-center mr-2">
+                <i class="ri-timer-line text-primary"></i>
+              </div>
+              <span class="text-sm text-gray-600">Time:
+                <span class="font-medium text-gray-900">0.00s</span></span>
+            </div>
+            <div class="flex items-center">
+              <div class="w-6 h-6 flex items-center justify-center mr-2">
+                <i class="ri-footprint-line text-primary"></i>
+              </div>
+              <span class="text-sm text-gray-600">Steps: <span class="font-medium text-gray-900">0</span></span>
+            </div>
+            <div class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+              Ready to Start
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-center mb-6">
+          <div class="relative">
+            <canvas id="mazeCanvas" width="600" height="600"
+              class="border-2 border-gray-200 rounded-lg shadow-inner bg-white"></canvas>
+            <div id="loadingOverlay"
+              class="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center rounded-lg hidden">
+              <div class="text-center">
+                <div class="w-8 h-8 flex items-center justify-center mx-auto mb-2">
+                  <i class="ri-loader-4-line text-2xl text-primary animate-spin"></i>
+                </div>
+                <p class="text-sm text-gray-600">Generating maze...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-80 bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <div class="w-5 h-5 flex items-center justify-center mr-2">
+            <i class="ri-settings-3-line text-primary"></i>
+          </div>
+          Controls
+        </h3>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Algorithm</label>
+            <select id="algorithmSelect"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent custom-select">
+              <option value="dfs">Depth-First Search (DFS)</option>
+              <option value="bfs">Breadth-First Search (BFS)</option>
+              <option value="astar">A* Pathfinding</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Maze Size</label>
+            <select id="mazeSizeSelect"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent custom-select">
+              <option value="15">Small (15×15)</option>
+              <option value="21" selected>Medium (21×21)</option>
+              <option value="31">Large (31×31)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Animation Speed</label>
+            <div class="relative">
+              <input type="range" id="speedSlider" min="1" max="10" value="5"
+                class="w-full h-2 algorithm-speed rounded-lg appearance-none cursor-pointer" />
+              <div class="flex justify-between text-xs text-gray-500 mt-1">
+                <span>Slow</span>
+                <span>Fast</span>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <button id="generateBtn"
+              class="w-full bg-primary hover:bg-blue-600 text-white font-medium py-3 px-4 !rounded-button transition-colors whitespace-nowrap flex items-center justify-center">
+              <div class="w-5 h-5 flex items-center justify-center mr-2">
+                <i class="ri-refresh-line"></i>
+              </div>
+              Generate New Maze
+            </button>
+
+            <button id="solveBtn"
+              class="w-full bg-secondary hover:bg-green-600 text-white font-medium py-3 px-4 !rounded-button transition-colors whitespace-nowrap flex items-center justify-center">
+              <div class="w-5 h-5 flex items-center justify-center mr-2">
+                <i class="ri-play-line"></i>
+              </div>
+              Start Pathfinding
+            </button>
+
+            <button id="resetBtn"
+              class="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-4 !rounded-button transition-colors whitespace-nowrap flex items-center justify-center">
+              <div class="w-5 h-5 flex items-center justify-center mr-2">
+                <i class="ri-stop-line"></i>
+              </div>
+              Reset
+            </button>
+          </div>
+          <div class="border-t pt-4">
+            <h4 class="font-medium text-gray-900 mb-3">
+              Performance Comparison
+            </h4>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between items-center p-2 bg-blue-50 rounded">
+                <span class="text-blue-700">DFS</span>
+                <span class="text-blue-900 font-medium">-</span>
+              </div>
+              <div class="flex justify-between items-center p-2 bg-green-50 rounded">
+                <span class="text-green-700">BFS</span>
+                <span class="text-green-900 font-medium">-</span>
+              </div>
+              <div class="flex justify-between items-center p-2 bg-yellow-50 rounded">
+                <span class="text-yellow-700">A*</span>
+                <span class="text-yellow-900 font-medium">-</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <span class="text-sm text-gray-600">Dark Mode</span>
+            <div id="darkModeToggle"
+              class="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-300 transition-colors cursor-pointer">
+              <span
+                class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-1"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script id="maze-generation">
+    class MazeGenerator {
+      constructor(size) {
+        this.size = size;
+        this.maze = [];
+        this.init();
+      }
+
+      init() {
+        for (let i = 0; i < this.size; i++) {
+          this.maze[i] = [];
+          for (let j = 0; j < this.size; j++) {
+            this.maze[i][j] = 1;
+          }
+        }
+      }
+
+      generate() {
+        const stack = [];
+        const start = [1, 1];
+        this.maze[start[0]][start[1]] = 0;
+        stack.push(start);
+
+        while (stack.length > 0) {
+          const current = stack[stack.length - 1];
+          const neighbors = this.getUnvisitedNeighbors(current);
+
+          if (neighbors.length > 0) {
+            const next = neighbors[Math.floor(Math.random() * neighbors.length)];
+            this.removeWall(current, next);
+            this.maze[next[0]][next[1]] = 0;
+            stack.push(next);
+          } else {
+            stack.pop();
+          }
+        }
+
+        this.maze[this.size - 2][this.size - 2] = 2;
+        return this.maze;
+      }
+
+      getUnvisitedNeighbors([x, y]) {
+        const neighbors = [];
+        const directions = [
+          [0, 2],
+          [2, 0],
+          [0, -2],
+          [-2, 0],
+        ];
+
+        for (const [dx, dy] of directions) {
+          const nx = x + dx;
+          const ny = y + dy;
+          if (
+            nx > 0 &&
+            nx < this.size - 1 &&
+            ny > 0 &&
+            ny < this.size - 1 &&
+            this.maze[nx][ny] === 1
+          ) {
+            neighbors.push([nx, ny]);
+          }
+        }
+        return neighbors;
+      }
+      removeWall([x1, y1], [x2, y2]) {
+        const wallX = (x1 + x2) / 2;
+        const wallY = (y1 + y2) / 2;
+        this.maze[wallX][wallY] = 0;
+      }
+    }
+  </script>
+
+  <script id="pathfinding-algorithms">
+    class PathfindingAlgorithms {
+      constructor(maze) {
+        this.maze = maze;
+        this.size = maze.length;
+        this.start = [1, 1];
+        this.end = [this.size - 2, this.size - 2];
+      }
+
+      async dfs(onStep) {
+        const visited = new Set();
+        const path = [];
+        const stack = [this.start];
+
+        while (stack.length > 0) {
+          const current = stack.pop();
+          const key = `${current[0]},${current[1]}`;
+
+          if (visited.has(key)) continue;
+          visited.add(key);
+          path.push(current);
+
+          if (onStep) await onStep(current, "current");
+
+          if (current[0] === this.end[0] && current[1] === this.end[1]) {
+            return path;
+          }
+
+          const neighbors = this.getNeighbors(current);
+          for (const neighbor of neighbors) {
+            const neighborKey = `${neighbor[0]},${neighbor[1]}`;
+            if (!visited.has(neighborKey)) {
+              stack.push(neighbor);
+            }
+          }
+
+          if (onStep) await onStep(current, "visited");
+        }
+        return null;
+      }
+
+      async bfs(onStep) {
+        const visited = new Set();
+        const queue = [this.start];
+        const parent = new Map();
+        visited.add(`${this.start[0]},${this.start[1]}`);
+        while (queue.length > 0) {
+          const current = queue.shift();
+
+          if (onStep) await onStep(current, "current");
+          if (current[0] === this.end[0] && current[1] === this.end[1]) {
+            return this.reconstructPath(parent, current);
+          }
+
+          const neighbors = this.getNeighbors(current);
+          for (const neighbor of neighbors) {
+            const key = `${neighbor[0]},${neighbor[1]}`;
+            if (!visited.has(key)) {
+              visited.add(key);
+              parent.set(key, current);
+              queue.push(neighbor);
+            }
+          }
+
+          if (onStep) await onStep(current, "visited");
+        }
+        return null;
+      }
+
+      async aStar(onStep) {
+        const openSet = [this.start];
+        const closedSet = new Set();
+        const gScore = new Map();
+        const fScore = new Map();
+        const parent = new Map();
+
+        const startKey = `${this.start[0]},${this.start[1]}`;
+        gScore.set(startKey, 0);
+        fScore.set(startKey, this.heuristic(this.start, this.end));
+
+        while (openSet.length > 0) {
+          openSet.sort((a, b) => {
+            const aKey = `${a[0]},${a[1]}`;
+            const bKey = `${b[0]},${b[1]}`;
+            return (fScore.get(aKey) || Infinity) - (fScore.get(bKey) || Infinity);
+          });
+
+          const current = openSet.shift();
+          const currentKey = `${current[0]},${current[1]}`;
+
+          if (onStep) await onStep(current, "current");
+          if (current[0] === this.end[0] && current[1] === this.end[1]) {
+            return this.reconstructPath(parent, current);
+          }
+
+          closedSet.add(currentKey);
+
+          const neighbors = this.getNeighbors(current);
+          for (const neighbor of neighbors) {
+            const neighborKey = `${neighbor[0]},${neighbor[1]}`;
+
+            if (closedSet.has(neighborKey)) continue;
+
+            const tentativeGScore = (gScore.get(currentKey) || Infinity) + 1;
+            if (
+              !openSet.some(
+                (node) => node[0] === neighbor[0] && node[1] === neighbor[1],
+              )
+            ) {
+              openSet.push(neighbor);
+            } else if (tentativeGScore >= (gScore.get(neighborKey) || Infinity)) {
+              continue;
+            }
+
+            parent.set(neighborKey, current);
+            gScore.set(neighborKey, tentativeGScore);
+            fScore.set(
+              neighborKey,
+              tentativeGScore + this.heuristic(neighbor, this.end),
+            );
+          }
+
+          if (onStep) await onStep(current, "visited");
+        }
+        return null;
+      }
+
+      getNeighbors([x, y]) {
+        const neighbors = [];
+        const directions = [
+          [0, 1],
+          [1, 0],
+          [0, -1],
+          [-1, 0],
+        ];
+
+        for (const [dx, dy] of directions) {
+          const nx = x + dx;
+          const ny = y + dy;
+          if (
+            nx >= 0 &&
+            nx < this.size &&
+            ny >= 0 &&
+            ny < this.size &&
+            this.maze[nx][ny] !== 1
+          ) {
+            neighbors.push([nx, ny]);
+          }
+        }
+        return neighbors;
+      }
+      heuristic([x1, y1], [x2, y2]) {
+        return Math.abs(x1 - x2) + Math.abs(y1 - y2);
+      }
+
+      reconstructPath(parent, end) {
+        const path = [];
+        let current = end;
+
+        while (current) {
+          path.unshift(current);
+          const key = `${current[0]},${current[1]}`;
+          current = parent.get(key);
+        }
+        return path;
+      }
+    }
+  </script>
+
+  <script id="game-controller">
+    class MazeGame {
+      constructor() {
+        this.canvas = document.getElementById("mazeCanvas");
+        this.ctx = this.canvas.getContext("2d");
+        this.maze = null;
+        this.size = 21;
+        this.cellSize = 0;
+        this.isRunning = false;
+        this.currentAlgorithm = "dfs";
+        this.speed = 5;
+        this.visitedCells = new Set();
+        this.solutionPath = [];
+        this.startTime = 0;
+        this.stepCount = 0;
+
+        this.initializeControls();
+        this.generateMaze();
+      }
+
+      initializeControls() {
+        document
+          .getElementById("generateBtn")
+          .addEventListener("click", () => this.generateMaze());
+        document
+          .getElementById("solveBtn")
+          .addEventListener("click", () => this.solveMaze());
+        document
+          .getElementById("resetBtn")
+          .addEventListener("click", () => this.resetMaze());
+
+        document
+          .getElementById("algorithmSelect")
+          .addEventListener("change", (e) => {
+            this.currentAlgorithm = e.target.value;
+            this.updateAlgorithmInfo();
+          });
+
+        document
+          .getElementById("mazeSizeSelect")
+          .addEventListener("change", (e) => {
+            this.size = parseInt(e.target.value);
+            this.generateMaze();
+          });
+
+        document.getElementById("speedSlider").addEventListener("input", (e) => {
+          this.speed = parseInt(e.target.value);
+        });
+      }
+
+      generateMaze() {
+        document.getElementById("loadingOverlay").classList.remove("hidden");
+
+        setTimeout(() => {
+          const generator = new MazeGenerator(this.size);
+          this.maze = generator.generate();
+          this.cellSize = 600 / this.size;
+          this.resetMaze();
+          this.drawMaze();
+          document.getElementById("loadingOverlay").classList.add("hidden");
+        }, 100);
+      }
+
+      resetMaze() {
+        this.isRunning = false;
+        this.visitedCells.clear();
+        this.solutionPath = [];
+        this.stepCount = 0;
+        this.startTime = 0;
+        this.updateStatus("Ready to Start", "green");
+        this.updateTimer(0);
+        this.updateSteps(0);
+        if (this.maze) this.drawMaze();
+      }
+      async solveMaze() {
+        if (this.isRunning || !this.maze) return;
+
+        this.isRunning = true;
+        this.visitedCells.clear();
+        this.solutionPath = [];
+        this.stepCount = 0;
+        this.startTime = Date.now();
+        this.updateStatus("Solving...", "blue");
+
+        const pathfinder = new PathfindingAlgorithms(this.maze);
+        const delay = 110 - this.speed * 10;
+
+        const onStep = async (cell, type) => {
+          this.stepCount++;
+          if (type === "visited") {
+            this.visitedCells.add(`${cell[0]},${cell[1]}`);
+          }
+          this.drawMaze(cell, type);
+          this.updateSteps(this.stepCount);
+          this.updateTimer((Date.now() - this.startTime) / 1000);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        };
+
+        let solution = null;
+        try {
+          switch (this.currentAlgorithm) {
+            case "dfs":
+              solution = await pathfinder.dfs(onStep);
+              break;
+            case "bfs":
+              solution = await pathfinder.bfs(onStep);
+              break;
+            case "astar":
+              solution = await pathfinder.aStar(onStep);
+              break;
+          }
+        } catch (error) {
+          console.error("Pathfinding error:", error);
+        }
+
+        if (solution) {
+          this.solutionPath = solution;
+          this.updateStatus("Solution Found!", "green");
+          this.drawMaze();
+        } else {
+          this.updateStatus("No Solution Found", "red");
+        }
+
+        this.isRunning = false;
+      }
+
+      drawMaze(currentCell = null, cellType = null) {
+        this.ctx.clearRect(0, 0, 600, 600);
+
+        for (let i = 0; i < this.size; i++) {
+          for (let j = 0; j < this.size; j++) {
+            const x = j * this.cellSize;
+            const y = i * this.cellSize;
+
+            this.ctx.fillStyle = this.getCellColor(i, j, currentCell, cellType);
+            this.ctx.fillRect(x, y, this.cellSize, this.cellSize);
+
+            this.ctx.strokeStyle = "#e5e7eb";
+            this.ctx.lineWidth = 0.5;
+            this.ctx.strokeRect(x, y, this.cellSize, this.cellSize);
+          }
+        }
+      }
+      getCellColor(row, col, currentCell, cellType) {
+        if (this.maze[row][col] === 1) return "#1f2937";
+
+        if (
+          currentCell &&
+          currentCell[0] === row &&
+          currentCell[1] === col &&
+          cellType === "current"
+        ) {
+          return "#fbbf24";
+        }
+
+        if (this.solutionPath.some((cell) => cell[0] === row && cell[1] === col)) {
+          return "#f59e0b";
+        }
+
+        if (this.visitedCells.has(`${row},${col}`)) {
+          return "#dbeafe";
+        }
+
+        if (row === 1 && col === 1) return "#3b82f6";
+        if (this.maze[row][col] === 2) return "#10b981";
+
+        return "#ffffff";
+      }
+
+      updateStatus(message, color) {
+        const statusElement = document.querySelector(".bg-green-100");
+        statusElement.textContent = message;
+        statusElement.className = `px-3 py-1 bg-${color}-100 text-${color}-800 rounded-full text-sm font-medium`;
+      }
+
+      updateTimer(seconds) {
+        document.querySelector('[class*="Time:"] span').textContent =
+          `${seconds.toFixed(2)}s`;
+      }
+
+      updateSteps(steps) {
+        document.querySelector('[class*="Steps:"] span').textContent = steps;
+      }
+
+      updateAlgorithmInfo() {
+        const info = {
+          dfs: {
+            name: "Depth-First Search",
+            description:
+              "DFS explores as far as possible along each branch before backtracking. Memory efficient but may not find shortest path.",
+          },
+          bfs: {
+            name: "Breadth-First Search",
+            description:
+              "BFS explores all neighbors at current depth before moving deeper. Guarantees shortest path but uses more memory.",
+          },
+          astar: {
+            name: "A* Pathfinding",
+            description:
+              "A* uses heuristics to guide search toward goal. Combines benefits of DFS and BFS for optimal pathfinding.",
+          },
+        };
+
+        const current = info[this.currentAlgorithm];
+        document.querySelector(".bg-blue-50 h4").textContent =
+          `Current: ${current.name}`;
+        document.querySelector(".bg-blue-50 p").textContent = current.description;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      new MazeGame();
+    });
+  </script>
+
+  <script id="dark-mode-toggle">
+    document.addEventListener("DOMContentLoaded", () => {
+      const toggle = document.getElementById("darkModeToggle");
+      const toggleButton = toggle.querySelector("span");
+      let isDark = false;
+
+      toggle.addEventListener("click", () => {
+        isDark = !isDark;
+        if (isDark) {
+          toggle.classList.remove("bg-gray-300");
+          toggle.classList.add("bg-primary");
+          toggleButton.classList.remove("translate-x-1");
+          toggleButton.classList.add("translate-x-6");
+        } else {
+          toggle.classList.remove("bg-primary");
+          toggle.classList.add("bg-gray-300");
+          toggleButton.classList.remove("translate-x-6");
+          toggleButton.classList.add("translate-x-1");
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>
