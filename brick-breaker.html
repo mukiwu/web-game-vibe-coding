@@ -209,8 +209,8 @@
           x: this.canvas.width / 2,
           y: this.canvas.height - 40,
           radius: 8,
-          dx: 4,
-          dy: -4,
+          dx: 3,
+          dy: -3,
         };
 
         this.bricks = [];
@@ -312,7 +312,7 @@
           this.ball.dy = -this.ball.dy;
 
           const hitPos = (this.ball.x - this.paddle.x) / this.paddle.width;
-          this.ball.dx = (hitPos - 0.5) * 8;
+          this.ball.dx = (hitPos - 0.5) * 4;
         }
 
         this.bricks.forEach((brick) => {
