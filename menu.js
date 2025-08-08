@@ -1,4 +1,21 @@
 (function () {
+  function loadGoogleAnalytics() {
+    // 載入 Google Analytics
+    const script1 = document.createElement('script');
+    script1.async = true;
+    script1.src = 'https://www.googletagmanager.com/gtag/js?id=G-GYQZ7KM888';
+    document.head.appendChild(script1);
+
+    const script2 = document.createElement('script');
+    script2.innerHTML = `
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GYQZ7KM888');
+    `;
+    document.head.appendChild(script2);
+  }
+
   async function loadMenu() {
     try {
       const res = await fetch('menu.json', { cache: 'no-cache' });
@@ -51,8 +68,12 @@
 
   // Load after DOMReady
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadMenu);
+    document.addEventListener('DOMContentLoaded', () => {
+      loadGoogleAnalytics();
+      loadMenu();
+    });
   } else {
+    loadGoogleAnalytics();
     loadMenu();
   }
 })();
