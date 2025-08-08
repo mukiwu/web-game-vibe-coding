@@ -93,6 +93,7 @@
       },
     };
   </script>
+  <script src="menu.js"></script>
 </head>
 
 <body class="fantasy-bg min-h-screen text-white">
@@ -424,44 +425,7 @@
     </aside>
   </main>
 
-  <!-- 底部操作區 -->
-  <footer class="w-full bg-gray-900/50 backdrop-blur-sm border-t border-gray-700/50 px-6 py-4">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center space-x-4">
-        <button id="saveGame"
-          class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-button text-sm font-medium transition-colors flex items-center space-x-2 whitespace-nowrap !rounded-button">
-          <div class="w-4 h-4 flex items-center justify-center">
-            <i class="ri-save-line"></i>
-          </div>
-          <span>保存進度</span>
-        </button>
-        <button id="restartGame"
-          class="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-button text-sm font-medium transition-colors flex items-center space-x-2 whitespace-nowrap !rounded-button">
-          <div class="w-4 h-4 flex items-center justify-center">
-            <i class="ri-restart-line"></i>
-          </div>
-          <span>重新開始</span>
-        </button>
-      </div>
-
-      <div class="flex items-center space-x-4">
-        <button id="gameSettings"
-          class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-button text-sm font-medium transition-colors flex items-center space-x-2 whitespace-nowrap !rounded-button">
-          <div class="w-4 h-4 flex items-center justify-center">
-            <i class="ri-settings-line"></i>
-          </div>
-          <span>設定選單</span>
-        </button>
-        <button id="gameHelp"
-          class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-button text-sm font-medium transition-colors flex items-center space-x-2 whitespace-nowrap !rounded-button">
-          <div class="w-4 h-4 flex items-center justify-center">
-            <i class="ri-question-line"></i>
-          </div>
-          <span>遊戲說明</span>
-        </button>
-      </div>
-    </div>
-  </footer>
+  <script src="footer.js"></script>
 
   <script id="diceRollSystem">
     document.addEventListener("DOMContentLoaded", function () {

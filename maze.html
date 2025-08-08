@@ -137,6 +137,10 @@
     .dark .custom-select {
       background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
     }
+
+    .container {
+      max-width: 100% !important;
+    }
   </style>
   <script>
     tailwind.config = {
@@ -162,6 +166,7 @@
       },
     };
   </script>
+  <script src="menu.js"></script>
 </head>
 
 <body class="bg-gray-50 min-h-screen">
@@ -390,22 +395,8 @@
     </div>
   </div>
 
-  <footer class="mt-8 text-center pb-8">
-    <div class="bg-white rounded-lg shadow-lg p-4 max-w-md mx-auto">
-      <div class="text-gray-600 mb-2">Created with ❤️ by MUKI Vibe Coding</div>
-      <div class="flex justify-center gap-4">
-        <a href="https://muki.tw" target="_blank" class="text-blue-500 hover:text-blue-600 flex items-center gap-1">
-          <i class="ri-global-line"></i>
-          MUKI space*
-        </a>
-        <a href="https://github.com/mukiwu/web-game-vibe-coding" target="_blank"
-          class="text-blue-500 hover:text-blue-600 flex items-center gap-1">
-          <i class="ri-github-fill"></i>
-          GitHub
-        </a>
-      </div>
-    </div>
-  </footer>
+  <footer id="footer-anchor" class="mt-8 text-center pb-8"></footer>
+  <script src="footer.js"></script>
 
   <script id="maze-generation">
     class MazeGenerator {

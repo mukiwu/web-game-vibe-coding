@@ -34,6 +34,7 @@
       },
     };
   </script>
+  <script src="menu.js"></script>
   <style>
     :where([class^="ri-"])::before {
       content: "\f3c2";
@@ -196,340 +197,329 @@
   </style>
 </head>
 
-<body class="min-h-screen flex items-center justify-center p-4">
-  <div class="w-full max-w-md mx-auto">
-    <div class="text-center mb-8">
-      <h1 class="text-4xl font-bold text-gray-800 mb-2">Animal 2048</h1>
-      <p class="text-gray-600">Merge same animals to create a stronger animal!</p>
-    </div>
-    <div class="flex justify-between items-center mb-6">
-      <div class="flex gap-4">
-        <div class="bg-white px-4 py-2 rounded-lg shadow-sm">
-          <div class="text-xs text-gray-500 uppercase tracking-wide">
-            Score
+<body>
+  <div class="min-h-screen flex items-center justify-center p-4 w-full">
+    <div class="w-full max-w-md mx-auto">
+      <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-gray-800 mb-2">Animal 2048</h1>
+        <p class="text-gray-600">Merge same animals to create a stronger animal!</p>
+      </div>
+      <div class="flex justify-between items-center mb-6">
+        <div class="flex gap-4">
+          <div class="bg-white px-4 py-2 rounded-lg shadow-sm">
+            <div class="text-xs text-gray-500 uppercase tracking-wide">
+              Score
+            </div>
+            <div id="current-score" class="text-xl font-bold text-gray-800">
+              0
+            </div>
           </div>
-          <div id="current-score" class="text-xl font-bold text-gray-800">
-            0
+          <div class="bg-white px-4 py-2 rounded-lg shadow-sm">
+            <div class="text-xs text-gray-500 uppercase tracking-wide">
+              Best Score
+            </div>
+            <div id="best-score" class="text-xl font-bold text-gray-800">0</div>
           </div>
         </div>
-        <div class="bg-white px-4 py-2 rounded-lg shadow-sm">
-          <div class="text-xs text-gray-500 uppercase tracking-wide">
-            Best Score
+        <button id="restart-btn"
+          class="flex items-center bg-primary text-white px-4 py-2 !rounded-button whitespace-nowrap hover:bg-blue-600 transition-colors">
+          <div class="w-5 h-5 flex items-center justify-center mr-2 inline-block">
+            <i class="ri-refresh-line"></i>
           </div>
-          <div id="best-score" class="text-xl font-bold text-gray-800">0</div>
-        </div>
+          Restart
+        </button>
       </div>
-      <button id="restart-btn"
-        class="flex items-center bg-primary text-white px-4 py-2 !rounded-button whitespace-nowrap hover:bg-blue-600 transition-colors">
-        <div class="w-5 h-5 flex items-center justify-center mr-2 inline-block">
-          <i class="ri-refresh-line"></i>
+      <div class="relative">
+        <div id="game-container" class="game-grid grid grid-cols-4 w-full aspect-square">
+          <div class="grid-cell" data-row="0" data-col="0"></div>
+          <div class="grid-cell" data-row="0" data-col="1"></div>
+          <div class="grid-cell" data-row="0" data-col="2"></div>
+          <div class="grid-cell" data-row="0" data-col="3"></div>
+          <div class="grid-cell" data-row="1" data-col="0"></div>
+          <div class="grid-cell" data-row="1" data-col="1"></div>
+          <div class="grid-cell" data-row="1" data-col="2"></div>
+          <div class="grid-cell" data-row="1" data-col="3"></div>
+          <div class="grid-cell" data-row="2" data-col="0"></div>
+          <div class="grid-cell" data-row="2" data-col="1"></div>
+          <div class="grid-cell" data-row="2" data-col="2"></div>
+          <div class="grid-cell" data-row="2" data-col="3"></div>
+          <div class="grid-cell" data-row="3" data-col="0"></div>
+          <div class="grid-cell" data-row="3" data-col="1"></div>
+          <div class="grid-cell" data-row="3" data-col="2"></div>
+          <div class="grid-cell" data-row="3" data-col="3"></div>
         </div>
-        Restart
-      </button>
-    </div>
-    <div class="relative">
-      <div id="game-container" class="game-grid grid grid-cols-4 w-full aspect-square">
-        <div class="grid-cell" data-row="0" data-col="0"></div>
-        <div class="grid-cell" data-row="0" data-col="1"></div>
-        <div class="grid-cell" data-row="0" data-col="2"></div>
-        <div class="grid-cell" data-row="0" data-col="3"></div>
-        <div class="grid-cell" data-row="1" data-col="0"></div>
-        <div class="grid-cell" data-row="1" data-col="1"></div>
-        <div class="grid-cell" data-row="1" data-col="2"></div>
-        <div class="grid-cell" data-row="1" data-col="3"></div>
-        <div class="grid-cell" data-row="2" data-col="0"></div>
-        <div class="grid-cell" data-row="2" data-col="1"></div>
-        <div class="grid-cell" data-row="2" data-col="2"></div>
-        <div class="grid-cell" data-row="2" data-col="3"></div>
-        <div class="grid-cell" data-row="3" data-col="0"></div>
-        <div class="grid-cell" data-row="3" data-col="1"></div>
-        <div class="grid-cell" data-row="3" data-col="2"></div>
-        <div class="grid-cell" data-row="3" data-col="3"></div>
-      </div>
-      <div id="game-over" class="game-over-overlay hidden">
-        <div class="bg-white p-8 rounded-xl shadow-lg text-center">
-          <div class="w-16 h-16 flex items-center justify-center mx-auto mb-4 text-4xl">
-            😢
+        <div id="game-over" class="game-over-overlay hidden">
+          <div class="bg-white p-8 rounded-xl shadow-lg text-center">
+            <div class="w-16 h-16 flex items-center justify-center mx-auto mb-4 text-4xl">
+              😢
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Game Over</h2>
+            <p class="text-gray-600 mb-6">No more moves!</p>
+            <button id="restart-game-over"
+              class="bg-primary text-white px-6 py-3 !rounded-button whitespace-nowrap hover:bg-blue-600 transition-colors">
+              再玩一次
+            </button>
           </div>
-          <h2 class="text-2xl font-bold text-gray-800 mb-2">Game Over</h2>
-          <p class="text-gray-600 mb-6">No more moves!</p>
-          <button id="restart-game-over"
-            class="bg-primary text-white px-6 py-3 !rounded-button whitespace-nowrap hover:bg-blue-600 transition-colors">
-            再玩一次
-          </button>
         </div>
       </div>
-    </div>
-    <div class="mt-6 text-center text-sm text-gray-500">
-      <p>Use arrow keys or swipe to move the animals</p>
-    </div>
-    <div class="mt-8 bg-white p-4 rounded-lg shadow-sm">
-      <h3 class="text-lg font-semibold text-gray-800 mb-3">Animal Level</h3>
-      <div class="grid grid-cols-6 gap-2 text-center text-xs">
-        <div class="fruit-cell fruit-1 relative h-12">🐰</div>
-        <div class="fruit-cell fruit-2 relative h-12">🐱</div>
-        <div class="fruit-cell fruit-3 relative h-12">🐶</div>
-        <div class="fruit-cell fruit-4 relative h-12">🦊</div>
-        <div class="fruit-cell fruit-5 relative h-12">🐼</div>
-        <div class="fruit-cell fruit-6 relative h-12">🦁</div>
+      <div class="mt-6 text-center text-sm text-gray-500">
+        <p>Use arrow keys or swipe to move the animals</p>
       </div>
-      <div class="grid grid-cols-5 gap-2 text-center text-xs mt-2">
-        <div class="fruit-cell fruit-7 relative h-12">🐯</div>
-        <div class="fruit-cell fruit-8 relative h-12">🐸</div>
-        <div class="fruit-cell fruit-9 relative h-12">🦉</div>
-        <div class="fruit-cell fruit-10 relative h-12">🦄</div>
-        <div class="fruit-cell fruit-11 relative h-12">🐲</div>
+      <div class="mt-8 bg-white p-4 rounded-lg shadow-sm">
+        <h3 class="text-lg font-semibold text-gray-800 mb-3">Animal Level</h3>
+        <div class="grid grid-cols-6 gap-2 text-center text-xs">
+          <div class="fruit-cell fruit-1 relative h-12">🐰</div>
+          <div class="fruit-cell fruit-2 relative h-12">🐱</div>
+          <div class="fruit-cell fruit-3 relative h-12">🐶</div>
+          <div class="fruit-cell fruit-4 relative h-12">🦊</div>
+          <div class="fruit-cell fruit-5 relative h-12">🐼</div>
+          <div class="fruit-cell fruit-6 relative h-12">🦁</div>
+        </div>
+        <div class="grid grid-cols-5 gap-2 text-center text-xs mt-2">
+          <div class="fruit-cell fruit-7 relative h-12">🐯</div>
+          <div class="fruit-cell fruit-8 relative h-12">🐸</div>
+          <div class="fruit-cell fruit-9 relative h-12">🦉</div>
+          <div class="fruit-cell fruit-10 relative h-12">🦄</div>
+          <div class="fruit-cell fruit-11 relative h-12">🐲</div>
+        </div>
       </div>
+      <div id="footer-anchor"></div>
     </div>
-    <div class="mt-8 bg-white p-4 rounded-lg shadow-sm text-center">
-      <div class="text-gray-600 mb-2">Created with ❤️ by MUKI Vibe Coding</div>
-      <div class="flex justify-center gap-4">
-        <a href="https://muki.tw" target="_blank" class="text-blue-500 hover:text-blue-600 flex items-center gap-1">
-          <i class="ri-global-line"></i>
-          MUKI space*
-        </a>
-        <a href="https://github.com/mukiwu/web-game-vibe-coding" target="_blank"
-          class="text-blue-500 hover:text-blue-600 flex items-center gap-1">
-          <i class="ri-github-fill"></i>
-          GitHub
-        </a>
-      </div>
-    </div>
-  </div>
-  <script id="game-logic">
-    class Game2048 {
-      constructor() {
-        this.grid = Array(4)
-          .fill()
-          .map(() => Array(4).fill(0));
-        this.score = 0;
-        this.bestScore = localStorage.getItem("bestScore") || 0;
-        this.fruits = [
-          "",
-          "🐰",
-          "🐱",
-          "🐶",
-          "🦊",
-          "🐼",
-          "🦁",
-          "🐯",
-          "🐸",
-          "🦉",
-          "🦄",
-          "🐲",
-        ];
-        this.gameContainer = document.getElementById("game-container");
-        this.currentScoreEl = document.getElementById("current-score");
-        this.bestScoreEl = document.getElementById("best-score");
-        this.gameOverEl = document.getElementById("game-over");
-        this.updateDisplay();
-        this.addRandomFruit();
-        this.addRandomFruit();
-        this.render();
-      }
-      addRandomFruit() {
-        const emptyCells = [];
-        for (let i = 0; i < 4; i++) {
-          for (let j = 0; j < 4; j++) {
-            if (this.grid[i][j] === 0) {
-              emptyCells.push([i, j]);
-            }
-          }
+    <script src="footer.js"></script>
+    <script id="game-logic">
+      class Game2048 {
+        constructor() {
+          this.grid = Array(4)
+            .fill()
+            .map(() => Array(4).fill(0));
+          this.score = 0;
+          this.bestScore = localStorage.getItem("bestScore") || 0;
+          this.fruits = [
+            "",
+            "🐰",
+            "🐱",
+            "🐶",
+            "🦊",
+            "🐼",
+            "🦁",
+            "🐯",
+            "🐸",
+            "🦉",
+            "🦄",
+            "🐲",
+          ];
+          this.gameContainer = document.getElementById("game-container");
+          this.currentScoreEl = document.getElementById("current-score");
+          this.bestScoreEl = document.getElementById("best-score");
+          this.gameOverEl = document.getElementById("game-over");
+          this.updateDisplay();
+          this.addRandomFruit();
+          this.addRandomFruit();
+          this.render();
         }
-        if (emptyCells.length > 0) {
-          const randomCell =
-            emptyCells[Math.floor(Math.random() * emptyCells.length)];
-          this.grid[randomCell[0]][randomCell[1]] = Math.random() < 0.9 ? 1 : 2;
-        }
-      }
-      render() {
-        const cells = this.gameContainer.querySelectorAll(".grid-cell");
-        cells.forEach((cell) => {
-          const existingFruit = cell.querySelector(".fruit-cell");
-          if (existingFruit) {
-            existingFruit.remove();
-          }
-        });
-        for (let i = 0; i < 4; i++) {
-          for (let j = 0; j < 4; j++) {
-            if (this.grid[i][j] !== 0) {
-              const cell = this.gameContainer.querySelector(
-                `[data-row="${i}"][data-col="${j}"]`,
-              );
-              const fruitEl = document.createElement("div");
-              fruitEl.className = `fruit-cell fruit-${this.grid[i][j]}`;
-              fruitEl.textContent = this.fruits[this.grid[i][j]];
-              cell.appendChild(fruitEl);
-            }
-          }
-        }
-      }
-      move(direction) {
-        let moved = false;
-        let newGrid = this.grid.map((row) => [...row]);
-        if (direction === "left" || direction === "right") {
+        addRandomFruit() {
+          const emptyCells = [];
           for (let i = 0; i < 4; i++) {
-            let row = newGrid[i];
-            if (direction === "right") row = row.reverse();
-            let newRow = row.filter((val) => val !== 0);
-            for (let j = 0; j < newRow.length - 1; j++) {
-              if (newRow[j] === newRow[j + 1]) {
-                newRow[j]++;
-                this.score += Math.pow(2, newRow[j]) * 10;
-                newRow[j + 1] = 0;
+            for (let j = 0; j < 4; j++) {
+              if (this.grid[i][j] === 0) {
+                emptyCells.push([i, j]);
               }
             }
-            newRow = newRow.filter((val) => val !== 0);
-            while (newRow.length < 4) newRow.push(0);
-            if (direction === "right") newRow = newRow.reverse();
-            if (JSON.stringify(row) !== JSON.stringify(newRow)) moved = true;
-            newGrid[i] = newRow;
           }
-        } else {
-          for (let j = 0; j < 4; j++) {
-            let col = [];
-            for (let i = 0; i < 4; i++) {
-              col.push(newGrid[i][j]);
+          if (emptyCells.length > 0) {
+            const randomCell =
+              emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            this.grid[randomCell[0]][randomCell[1]] = Math.random() < 0.9 ? 1 : 2;
+          }
+        }
+        render() {
+          const cells = this.gameContainer.querySelectorAll(".grid-cell");
+          cells.forEach((cell) => {
+            const existingFruit = cell.querySelector(".fruit-cell");
+            if (existingFruit) {
+              existingFruit.remove();
             }
-            if (direction === "down") col = col.reverse();
-            let newCol = col.filter((val) => val !== 0);
-            for (let i = 0; i < newCol.length - 1; i++) {
-              if (newCol[i] === newCol[i + 1]) {
-                newCol[i]++;
-                this.score += Math.pow(2, newCol[i]) * 10;
-                newCol[i + 1] = 0;
+          });
+          for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+              if (this.grid[i][j] !== 0) {
+                const cell = this.gameContainer.querySelector(
+                  `[data-row="${i}"][data-col="${j}"]`,
+                );
+                const fruitEl = document.createElement("div");
+                fruitEl.className = `fruit-cell fruit-${this.grid[i][j]}`;
+                fruitEl.textContent = this.fruits[this.grid[i][j]];
+                cell.appendChild(fruitEl);
               }
-            }
-            newCol = newCol.filter((val) => val !== 0);
-            while (newCol.length < 4) newCol.push(0);
-            if (direction === "down") newCol = newCol.reverse();
-            for (let i = 0; i < 4; i++) {
-              if (newGrid[i][j] !== newCol[i]) moved = true;
-              newGrid[i][j] = newCol[i];
             }
           }
         }
-        if (moved) {
-          this.grid = newGrid;
+        move(direction) {
+          let moved = false;
+          let newGrid = this.grid.map((row) => [...row]);
+          if (direction === "left" || direction === "right") {
+            for (let i = 0; i < 4; i++) {
+              let row = newGrid[i];
+              if (direction === "right") row = row.reverse();
+              let newRow = row.filter((val) => val !== 0);
+              for (let j = 0; j < newRow.length - 1; j++) {
+                if (newRow[j] === newRow[j + 1]) {
+                  newRow[j]++;
+                  this.score += Math.pow(2, newRow[j]) * 10;
+                  newRow[j + 1] = 0;
+                }
+              }
+              newRow = newRow.filter((val) => val !== 0);
+              while (newRow.length < 4) newRow.push(0);
+              if (direction === "right") newRow = newRow.reverse();
+              if (JSON.stringify(row) !== JSON.stringify(newRow)) moved = true;
+              newGrid[i] = newRow;
+            }
+          } else {
+            for (let j = 0; j < 4; j++) {
+              let col = [];
+              for (let i = 0; i < 4; i++) {
+                col.push(newGrid[i][j]);
+              }
+              if (direction === "down") col = col.reverse();
+              let newCol = col.filter((val) => val !== 0);
+              for (let i = 0; i < newCol.length - 1; i++) {
+                if (newCol[i] === newCol[i + 1]) {
+                  newCol[i]++;
+                  this.score += Math.pow(2, newCol[i]) * 10;
+                  newCol[i + 1] = 0;
+                }
+              }
+              newCol = newCol.filter((val) => val !== 0);
+              while (newCol.length < 4) newCol.push(0);
+              if (direction === "down") newCol = newCol.reverse();
+              for (let i = 0; i < 4; i++) {
+                if (newGrid[i][j] !== newCol[i]) moved = true;
+                newGrid[i][j] = newCol[i];
+              }
+            }
+          }
+          if (moved) {
+            this.grid = newGrid;
+            this.addRandomFruit();
+            this.render();
+            this.updateDisplay();
+            if (this.isGameOver()) {
+              this.showGameOver();
+            }
+          }
+        }
+        isGameOver() {
+          for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+              if (this.grid[i][j] === 0) return false;
+              if (i < 3 && this.grid[i][j] === this.grid[i + 1][j]) return false;
+              if (j < 3 && this.grid[i][j] === this.grid[i][j + 1]) return false;
+            }
+          }
+          return true;
+        }
+        showGameOver() {
+          this.gameOverEl.classList.remove("hidden");
+        }
+        updateDisplay() {
+          this.currentScoreEl.textContent = this.score;
+          if (this.score > this.bestScore) {
+            this.bestScore = this.score;
+            localStorage.setItem("bestScore", this.bestScore);
+            this.bestScoreEl.classList.add("score-animation");
+            setTimeout(
+              () => this.bestScoreEl.classList.remove("score-animation"),
+              300,
+            );
+          }
+          this.bestScoreEl.textContent = this.bestScore;
+        }
+        restart() {
+          this.grid = Array(4)
+            .fill()
+            .map(() => Array(4).fill(0));
+          this.score = 0;
+          this.gameOverEl.classList.add("hidden");
+          this.addRandomFruit();
           this.addRandomFruit();
           this.render();
           this.updateDisplay();
-          if (this.isGameOver()) {
-            this.showGameOver();
+        }
+      }
+      let game = new Game2048();
+    </script>
+    <script id="game-controls">
+      document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("keydown", function (e) {
+          switch (e.key) {
+            case "ArrowLeft":
+              e.preventDefault();
+              game.move("left");
+              break;
+            case "ArrowRight":
+              e.preventDefault();
+              game.move("right");
+              break;
+            case "ArrowUp":
+              e.preventDefault();
+              game.move("up");
+              break;
+            case "ArrowDown":
+              e.preventDefault();
+              game.move("down");
+              break;
           }
-        }
-      }
-      isGameOver() {
-        for (let i = 0; i < 4; i++) {
-          for (let j = 0; j < 4; j++) {
-            if (this.grid[i][j] === 0) return false;
-            if (i < 3 && this.grid[i][j] === this.grid[i + 1][j]) return false;
-            if (j < 3 && this.grid[i][j] === this.grid[i][j + 1]) return false;
-          }
-        }
-        return true;
-      }
-      showGameOver() {
-        this.gameOverEl.classList.remove("hidden");
-      }
-      updateDisplay() {
-        this.currentScoreEl.textContent = this.score;
-        if (this.score > this.bestScore) {
-          this.bestScore = this.score;
-          localStorage.setItem("bestScore", this.bestScore);
-          this.bestScoreEl.classList.add("score-animation");
-          setTimeout(
-            () => this.bestScoreEl.classList.remove("score-animation"),
-            300,
-          );
-        }
-        this.bestScoreEl.textContent = this.bestScore;
-      }
-      restart() {
-        this.grid = Array(4)
-          .fill()
-          .map(() => Array(4).fill(0));
-        this.score = 0;
-        this.gameOverEl.classList.add("hidden");
-        this.addRandomFruit();
-        this.addRandomFruit();
-        this.render();
-        this.updateDisplay();
-      }
-    }
-    let game = new Game2048();
-  </script>
-  <script id="game-controls">
-    document.addEventListener("DOMContentLoaded", function () {
-      document.addEventListener("keydown", function (e) {
-        switch (e.key) {
-          case "ArrowLeft":
-            e.preventDefault();
-            game.move("left");
-            break;
-          case "ArrowRight":
-            e.preventDefault();
-            game.move("right");
-            break;
-          case "ArrowUp":
-            e.preventDefault();
-            game.move("up");
-            break;
-          case "ArrowDown":
-            e.preventDefault();
-            game.move("down");
-            break;
-        }
-      });
-      document.getElementById("restart-btn").addEventListener("click", function () {
-        game.restart();
-      });
-      document
-        .getElementById("restart-game-over")
-        .addEventListener("click", function () {
+        });
+        document.getElementById("restart-btn").addEventListener("click", function () {
           game.restart();
         });
-    });
-  </script>
-  <script id="touch-controls">
-    document.addEventListener("DOMContentLoaded", function () {
-      let startX, startY;
-      const gameContainer = document.getElementById("game-container");
-      gameContainer.addEventListener("touchstart", function (e) {
-        e.preventDefault();
-        const touch = e.touches[0];
-        startX = touch.clientX;
-        startY = touch.clientY;
+        document
+          .getElementById("restart-game-over")
+          .addEventListener("click", function () {
+            game.restart();
+          });
       });
-      gameContainer.addEventListener("touchend", function (e) {
-        e.preventDefault();
-        if (!startX || !startY) return;
-        const touch = e.changedTouches[0];
-        const endX = touch.clientX;
-        const endY = touch.clientY;
-        const diffX = startX - endX;
-        const diffY = startY - endY;
-        if (Math.abs(diffX) > Math.abs(diffY)) {
-          if (diffX > 30) {
-            game.move("left");
-          } else if (diffX < -30) {
-            game.move("right");
+    </script>
+    <script id="touch-controls">
+      document.addEventListener("DOMContentLoaded", function () {
+        let startX, startY;
+        const gameContainer = document.getElementById("game-container");
+        gameContainer.addEventListener("touchstart", function (e) {
+          e.preventDefault();
+          const touch = e.touches[0];
+          startX = touch.clientX;
+          startY = touch.clientY;
+        });
+        gameContainer.addEventListener("touchend", function (e) {
+          e.preventDefault();
+          if (!startX || !startY) return;
+          const touch = e.changedTouches[0];
+          const endX = touch.clientX;
+          const endY = touch.clientY;
+          const diffX = startX - endX;
+          const diffY = startY - endY;
+          if (Math.abs(diffX) > Math.abs(diffY)) {
+            if (diffX > 30) {
+              game.move("left");
+            } else if (diffX < -30) {
+              game.move("right");
+            }
+          } else {
+            if (diffY > 30) {
+              game.move("up");
+            } else if (diffY < -30) {
+              game.move("down");
+            }
           }
-        } else {
-          if (diffY > 30) {
-            game.move("up");
-          } else if (diffY < -30) {
-            game.move("down");
-          }
-        }
-        startX = null;
-        startY = null;
+          startX = null;
+          startY = null;
+        });
+        gameContainer.addEventListener("touchmove", function (e) {
+          e.preventDefault();
+        });
       });
-      gameContainer.addEventListener("touchmove", function (e) {
-        e.preventDefault();
-      });
-    });
-  </script>
+    </script>
 </body>
 
 </html>
