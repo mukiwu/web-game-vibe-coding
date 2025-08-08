@@ -1,9 +1,32 @@
 [
-  { "title": "Tetris", "href": "tetris-game.html", "emoji": "🧩" },
-  { "title": "Animal 2048", "href": "animal-2048.html", "emoji": "🐾" },
-  { "title": "Brick Breaker", "href": "brick-breaker.html", "emoji": "🧱" },
-  { "title": "Maze", "href": "maze.html", "emoji": "🧭" },
-  { "title": "D&D Adventure", "href": "ddd.html", "emoji": "🗡️" },
-  { "title": "Puzzle Fighter", "href": "fighter.html", "emoji": "⚔️" }
+  {
+    "title": "Tetris",
+    "href": "tetris-game.html",
+    "emoji": "🧩"
+  },
+  {
+    "title": "Animal 2048",
+    "href": "animal-2048.html",
+    "emoji": "🐾"
+  },
+  {
+    "title": "Brick Breaker",
+    "href": "brick-breaker.html",
+    "emoji": "🧱"
+  },
+  {
+    "title": "Maze",
+    "href": "maze.html",
+    "emoji": "🧭"
+  },
+  {
+    "title": "Puzzle Fighter",
+    "href": "fighter.html",
+    "emoji": "⚔️"
+  },
+  {
+    "title": "RPG Habit",
+    "href": "rpg-habit.html",
+    "emoji": "🎮"
+  }
 ]
-
