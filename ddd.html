@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>龍與地下城 AI 冒險</title>
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet" />
+  <style>
+    :where([class^="ri-"])::before {
+      content: "\f3c2";
+    }
+
+    .dice-animation {
+      animation: diceRoll 0.6s ease-in-out;
+    }
+
+    @keyframes diceRoll {
+      0% {
+        transform: rotate(0deg) scale(1);
+      }
+
+      25% {
+        transform: rotate(90deg) scale(1.1);
+      }
+
+      50% {
+        transform: rotate(180deg) scale(1.2);
+      }
+
+      75% {
+        transform: rotate(270deg) scale(1.1);
+      }
+
+      100% {
+        transform: rotate(360deg) scale(1);
+      }
+    }
+
+    .text-fade-in {
+      animation: fadeIn 0.8s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      0% {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fantasy-bg {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    }
+
+    .card-glow {
+      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1);
+    }
+
+    .progress-bar {
+      background: linear-gradient(90deg, #ef4444 0%, #f97316 50%, #22c55e 100%);
+    }
+  </style>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#3b82f6",
+            secondary: "#8b5cf6",
+          },
+          borderRadius: {
+            none: "0px",
+            sm: "4px",
+            DEFAULT: "8px",
+            md: "12px",
+            lg: "16px",
+            xl: "20px",
+            "2xl": "24px",
+            "3xl": "32px",
+            full: "9999px",
+            button: "8px",
+          },
+        },
+      },
+    };
+  </script>
+  <script src="menu.js"></script>
+</head>
+
+<body class="fantasy-bg min-h-screen text-white">
+  <!-- 頂部設置區域 -->
+  <header class="w-full bg-gray-900/50 backdrop-blur-sm border-b border-gray-700/50 px-6 py-4">
+    <div class="flex items-center justify-between">
+      <!-- Logo -->
+      <div class="flex items-center space-x-3">
+        <div
+          class="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg">
+          <i class="ri-sword-line text-white text-xl"></i>
+        </div>
+        <h1 class="font-['Pacifico'] text-2xl text-amber-400">
+          D&D Adventure
+        </h1>
+      </div>
+
+      <!-- AI 設置區 -->
+      <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-2">
+          <label class="text-sm text-gray-300">Ollama Model:</label>
+          <div class="relative">
+            <input type="text" id="modelSelect" placeholder="輸入 Ollama Model 名稱"
+              class="bg-gray-800 border border-gray-600 rounded-button px-3 py-2 text-sm text-white w-48 focus:outline-none focus:border-primary" />
+          </div>
+        </div>
+        <div class="flex items-center space-x-2">
+          <label class="text-sm text-gray-300">API Key:</label>
+          <input type="password" id="apiKey" placeholder="輸入您的 API Key"
+            class="bg-gray-800 border border-gray-600 rounded-button px-3 py-2 text-sm text-white w-48 focus:outline-none focus:border-primary" />
+        </div>
+        <button id="saveSettings"
+          class="bg-primary hover:bg-blue-600 px-4 py-2 rounded-button text-sm font-medium transition-colors whitespace-nowrap !rounded-button">
+          儲存設定
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主要遊戲區域 -->
+  <main class="flex h-[calc(100vh-80px)] p-6 gap-6">
+    <!-- 左側角色資訊面板 -->
+    <aside class="w-80 bg-gray-900/60 backdrop-blur-sm rounded-xl border border-gray-700/50 p-6 card-glow">
+      <h2 class="text-xl font-bold text-amber-400 mb-6 flex items-center">
+        <div class="w-6 h-6 flex items-center justify-center mr-2">
+          <i class="ri-user-3-line"></i>
+        </div>
+        角色資訊
+      </h2>
+
+      <!-- 角色頭像 -->
+      <div class="flex flex-col items-center mb-6">
+        <div class="w-24 h-24 rounded-full overflow-hidden border-4 border-amber-500 mb-3">
+          <img
+            src="https://readdy.ai/api/search-image?query=fantasy%20warrior%20character%20portrait%20with%20medieval%20armor%20and%20determined%20expression%2C%20detailed%20digital%20art%20style%2C%20warm%20lighting%2C%20heroic%20pose%2C%20fantasy%20game%20character%20design&width=200&height=200&seq=character001&orientation=squarish"
+            alt="角色頭像" class="w-full h-full object-cover object-top" />
+        </div>
+        <h3 class="text-lg font-bold text-white">艾瑞克·鐵心</h3>
+        <p class="text-sm text-gray-400">人類戰士 · 等級 3</p>
+      </div>
+
+      <!-- 基本屬性 -->
+      <div class="space-y-4 mb-6">
+        <div class="grid grid-cols-3 gap-3 text-center">
+          <div class="bg-gray-800/50 rounded-lg p-3">
+            <div class="text-lg font-bold text-red-400">16</div>
+            <div class="text-xs text-gray-400">力量</div>
+          </div>
+          <div class="bg-gray-800/50 rounded-lg p-3">
+            <div class="text-lg font-bold text-green-400">14</div>
+            <div class="text-xs text-gray-400">敏捷</div>
+          </div>
+          <div class="bg-gray-800/50 rounded-lg p-3">
+            <div class="text-lg font-bold text-blue-400">13</div>
+            <div class="text-xs text-gray-400">智力</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 生命值/魔力值 -->
+      <div class="space-y-3 mb-6">
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-red-400">生命值</span>
+            <span>42/50</span>
+          </div>
+          <div class="w-full bg-gray-700 rounded-full h-3">
+            <div class="progress-bar h-3 rounded-full" style="width: 84%"></div>
+          </div>
+        </div>
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-blue-400">魔力值</span>
+            <span>18/25</span>
+          </div>
+          <div class="w-full bg-gray-700 rounded-full h-3">
+            <div class="bg-blue-500 h-3 rounded-full" style="width: 72%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 裝備/道具 -->
+      <div>
+        <h4 class="text-sm font-bold text-amber-400 mb-3">裝備道具</h4>
+        <div class="grid grid-cols-2 gap-2">
+          <div class="bg-gray-800/50 rounded-lg p-3 text-center">
+            <div class="w-8 h-8 flex items-center justify-center mx-auto mb-1">
+              <i class="ri-sword-line text-amber-400 text-lg"></i>
+            </div>
+            <div class="text-xs text-gray-300">鋼鐵長劍</div>
+          </div>
+          <div class="bg-gray-800/50 rounded-lg p-3 text-center">
+            <div class="w-8 h-8 flex items-center justify-center mx-auto mb-1">
+              <i class="ri-shield-line text-gray-400 text-lg"></i>
+            </div>
+            <div class="text-xs text-gray-300">皮革盾牌</div>
+          </div>
+          <div class="bg-gray-800/50 rounded-lg p-3 text-center">
+            <div class="w-8 h-8 flex items-center justify-center mx-auto mb-1">
+              <i class="ri-flask-line text-red-400 text-lg"></i>
+            </div>
+            <div class="text-xs text-gray-300">治療藥水 x3</div>
+          </div>
+          <div class="bg-gray-800/50 rounded-lg p-3 text-center">
+            <div class="w-8 h-8 flex items-center justify-center mx-auto mb-1">
+              <i class="ri-coins-line text-yellow-400 text-lg"></i>
+            </div>
+            <div class="text-xs text-gray-300">金幣 x127</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 中央遊戲互動區 -->
+    <section
+      class="flex-1 bg-gray-900/60 backdrop-blur-sm rounded-xl border border-gray-700/50 p-6 card-glow flex flex-col overflow-hidden">
+      <!-- 故事劇情顯示框 -->
+      <div class="flex-1 mb-6 overflow-hidden">
+        <div class="h-full bg-gray-800/30 rounded-lg p-6 overflow-y-auto overscroll-y-contain">
+          <div id="storyContent" class="space-y-4">
+            <div class="text-fade-in">
+              <p class="text-gray-300 leading-relaxed mb-4">
+                你站在一座古老城堡的大門前，厚重的石門上刻滿了神秘的符文。微風吹過，帶來了一絲不祥的氣息。遠處傳來低沉的咆哮聲，似乎有什麼危險的生物正在城堡深處等待著。
+              </p>
+              <p class="text-amber-300 font-medium">
+                你注意到門上有三個不同的符文按鈕，每個都散發著不同顏色的光芒...
+              </p>
+            </div>
+
+            <div class="border-l-4 border-purple-500 pl-4 bg-purple-900/20 rounded-r-lg p-3 text-fade-in">
+              <p class="text-purple-300 italic">
+                "勇敢的冒險者啊，"
+                一個神秘的聲音在你腦海中響起，"選擇你的道路吧。紅色符文通往力量之路，藍色符文引向智慧之門，而金色符文則是勇氣的象徵。每一個選擇都將決定你的命運..."
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 選項按鈕組 -->
+      <div class="space-y-3">
+        <button
+          class="w-full bg-red-600/20 hover:bg-red-600/40 border border-red-500/50 rounded-lg p-4 text-left transition-all duration-200 group !rounded-button whitespace-nowrap">
+          <div class="flex items-center">
+            <div
+              class="w-8 h-8 flex items-center justify-center mr-3 bg-red-500 rounded-full group-hover:scale-110 transition-transform">
+              <i class="ri-fire-line text-white"></i>
+            </div>
+            <div>
+              <div class="font-medium text-red-300">按下紅色符文</div>
+              <div class="text-sm text-gray-400">憑藉力量強行推開大門</div>
+            </div>
+          </div>
+        </button>
+
+        <button
+          class="w-full bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/50 rounded-lg p-4 text-left transition-all duration-200 group !rounded-button whitespace-nowrap">
+          <div class="flex items-center">
+            <div
+              class="w-8 h-8 flex items-center justify-center mr-3 bg-blue-500 rounded-full group-hover:scale-110 transition-transform">
+              <i class="ri-brain-line text-white"></i>
+            </div>
+            <div>
+              <div class="font-medium text-blue-300">按下藍色符文</div>
+              <div class="text-sm text-gray-400">運用智慧解讀符文的奧秘</div>
+            </div>
+          </div>
+        </button>
+
+        <button
+          class="w-full bg-amber-600/20 hover:bg-amber-600/40 border border-amber-500/50 rounded-lg p-4 text-left transition-all duration-200 group !rounded-button whitespace-nowrap">
+          <div class="flex items-center">
+            <div
+              class="w-8 h-8 flex items-center justify-center mr-3 bg-amber-500 rounded-full group-hover:scale-110 transition-transform">
+              <i class="ri-heart-line text-white"></i>
+            </div>
+            <div>
+              <div class="font-medium text-amber-300">按下金色符文</div>
+              <div class="text-sm text-gray-400">以勇氣面對未知的挑戰</div>
+            </div>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <!-- 右側遊戲控制面板 -->
+    <aside
+      class="w-80 bg-gray-900/60 backdrop-blur-sm rounded-xl border border-gray-700/50 p-6 card-glow overflow-y-auto overscroll-y-contain">
+      <h2 class="text-xl font-bold text-amber-400 mb-6 flex items-center">
+        <div class="w-6 h-6 flex items-center justify-center mr-2">
+          <i class="ri-gamepad-line"></i>
+        </div>
+        遊戲控制
+      </h2>
+
+      <!-- 擲骰區域 -->
+      <div class="mb-8">
+        <h3 class="text-lg font-medium text-white mb-4">擲骰子</h3>
+        <div class="bg-gray-800/50 rounded-lg p-4 text-center mb-4">
+          <div id="diceResult" class="text-4xl font-bold text-amber-400 mb-2">
+            ?
+          </div>
+          <div class="text-sm text-gray-400">點擊下方按鈕擲骰</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <button id="rollD20"
+            class="bg-primary hover:bg-blue-600 rounded-lg p-3 text-center transition-colors !rounded-button whitespace-nowrap">
+            <div class="w-8 h-8 flex items-center justify-center mx-auto mb-1">
+              <i class="ri-dice-line text-white text-lg"></i>
+            </div>
+            <div class="text-sm font-medium">D20</div>
+          </button>
+          <button id="rollD12"
+            class="bg-secondary hover:bg-purple-600 rounded-lg p-3 text-center transition-colors !rounded-button whitespace-nowrap">
+            <div class="w-8 h-8 flex items-center justify-center mx-auto mb-1">
+              <i class="ri-dice-line text-white text-lg"></i>
+            </div>
+            <div class="text-sm font-medium">D12</div>
+          </button>
+          <button id="rollD10"
+            class="bg-green-600 hover:bg-green-700 rounded-lg p-3 text-center transition-colors !rounded-button whitespace-nowrap">
+            <div class="w-8 h-8 flex items-center justify-center mx-auto mb-1">
+              <i class="ri-dice-line text-white text-lg"></i>
+            </div>
+            <div class="text-sm font-medium">D10</div>
+          </button>
+          <button id="rollD6"
+            class="bg-orange-600 hover:bg-orange-700 rounded-lg p-3 text-center transition-colors !rounded-button whitespace-nowrap">
+            <div class="w-8 h-8 flex items-center justify-center mx-auto mb-1">
+              <i class="ri-dice-line text-white text-lg"></i>
+            </div>
+            <div class="text-sm font-medium">D6</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- 行動選項 -->
+      <div class="mb-8">
+        <h3 class="text-lg font-medium text-white mb-4">快速行動</h3>
+        <div class="space-y-2">
+          <button
+            class="w-full bg-gray-700 hover:bg-gray-600 rounded-lg p-3 text-left transition-colors !rounded-button whitespace-nowrap">
+            <div class="flex items-center">
+              <div class="w-6 h-6 flex items-center justify-center mr-3">
+                <i class="ri-search-line text-gray-300"></i>
+              </div>
+              <span class="text-sm">調查環境</span>
+            </div>
+          </button>
+          <button
+            class="w-full bg-gray-700 hover:bg-gray-600 rounded-lg p-3 text-left transition-colors !rounded-button whitespace-nowrap">
+            <div class="flex items-center">
+              <div class="w-6 h-6 flex items-center justify-center mr-3">
+                <i class="ri-run-line text-gray-300"></i>
+              </div>
+              <span class="text-sm">移動位置</span>
+            </div>
+          </button>
+          <button
+            class="w-full bg-gray-700 hover:bg-gray-600 rounded-lg p-3 text-left transition-colors !rounded-button whitespace-nowrap">
+            <div class="flex items-center">
+              <div class="w-6 h-6 flex items-center justify-center mr-3">
+                <i class="ri-hand-heart-line text-gray-300"></i>
+              </div>
+              <span class="text-sm">使用道具</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- 技能快捷鍵 -->
+      <div>
+        <h3 class="text-lg font-medium text-white mb-4">技能快捷鍵</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <button
+            class="bg-red-600/20 border border-red-500/50 rounded-lg p-3 text-center hover:bg-red-600/40 transition-colors !rounded-button whitespace-nowrap">
+            <div class="w-6 h-6 flex items-center justify-center mx-auto mb-1">
+              <i class="ri-sword-line text-red-400"></i>
+            </div>
+            <div class="text-xs text-red-300">攻擊</div>
+          </button>
+          <button
+            class="bg-blue-600/20 border border-blue-500/50 rounded-lg p-3 text-center hover:bg-blue-600/40 transition-colors !rounded-button whitespace-nowrap">
+            <div class="w-6 h-6 flex items-center justify-center mx-auto mb-1">
+              <i class="ri-shield-line text-blue-400"></i>
+            </div>
+            <div class="text-xs text-blue-300">防禦</div>
+          </button>
+          <button
+            class="bg-green-600/20 border border-green-500/50 rounded-lg p-3 text-center hover:bg-green-600/40 transition-colors !rounded-button whitespace-nowrap">
+            <div class="w-6 h-6 flex items-center justify-center mx-auto mb-1">
+              <i class="ri-heart-pulse-line text-green-400"></i>
+            </div>
+            <div class="text-xs text-green-300">治療</div>
+          </button>
+          <button
+            class="bg-purple-600/20 border border-purple-500/50 rounded-lg p-3 text-center hover:bg-purple-600/40 transition-colors !rounded-button whitespace-nowrap">
+            <div class="w-6 h-6 flex items-center justify-center mx-auto mb-1">
+              <i class="ri-magic-line text-purple-400"></i>
+            </div>
+            <div class="text-xs text-purple-300">法術</div>
+          </button>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="footer.js"></script>
+
+  <script id="diceRollSystem">
+    class DiceSystem {
+      constructor() {
+        this.diceTypes = {
+          d20: 20,
+          d12: 12,
+          d10: 10,
+          d6: 6
+        };
+
+        this.diceResult = document.getElementById("diceResult");
+        this.setupEventListeners();
+      }
+
+      setupEventListeners() {
+        Object.entries(this.diceTypes).forEach(([type, max]) => {
+          const button = document.getElementById(`roll${type.toUpperCase()}`);
+          if (button) {
+            button.addEventListener("click", () => this.rollDice(max));
+          }
+        });
+      }
+
+      async rollDice(max, isAuto = false) {
+        const result = Math.floor(Math.random() * max) + 1;
+
+        // 顯示動畫
+        this.diceResult.classList.add("dice-animation");
+        this.diceResult.textContent = "🎲";
+
+        // 等待動畫完成
+        await new Promise(resolve => setTimeout(resolve, 600));
+
+        this.diceResult.textContent = result;
+        this.diceResult.classList.remove("dice-animation");
+
+        // 處理特殊結果
+        if (result === max) {
+          this.diceResult.classList.add("text-amber-400");
+          setTimeout(() => this.diceResult.classList.remove("text-amber-400"), 2000);
+        } else if (result === 1) {
+          this.diceResult.classList.add("text-red-400");
+          setTimeout(() => this.diceResult.classList.remove("text-red-400"), 2000);
+        }
+
+        // 如果是自動擲骰，觸發回調
+        if (isAuto && this.onAutoRollComplete) {
+          this.onAutoRollComplete(max, result);
+        }
+
+        return result;
+      }
+
+      // 自動擲骰並返回結果
+      async autoRoll(diceType) {
+        console.log('autoRoll 被調用，骰子類型:', diceType);
+        const max = this.diceTypes[diceType.toLowerCase()];
+        if (!max) {
+          console.error('無效的骰子類型:', diceType);
+          return null;
+        }
+        console.log('開始擲骰，最大值:', max);
+        const result = await this.rollDice(max, true);
+        console.log('擲骰完成，結果:', result);
+        return result;
+      }
+
+      // 設置自動擲骰完成的回調
+      setAutoRollCallback(callback) {
+        this.onAutoRollComplete = callback;
+      }
+    }
+
+    // 初始化骰子系統
+    let diceSystem;
+    document.addEventListener("DOMContentLoaded", function () {
+      diceSystem = new DiceSystem();
+    });
+  </script>
+
+  <script id="storySystem">
+    class StoryManager {
+      constructor() {
+        this.storyContent = document.getElementById('storyContent');
+        this.choiceButtons = document.querySelectorAll('.w-full[class*="bg-"][class*="-600/20"]');
+        this.setupEventListeners();
+      }
+
+      setupEventListeners() {
+        this.choiceButtons.forEach(button => {
+          button.addEventListener('click', async () => {
+            const choice = button.querySelector('.font-medium').textContent;
+            const description = button.querySelector('.text-sm').textContent;
+
+            // 禁用所有按鈕
+            this.choiceButtons.forEach(btn => btn.disabled = true);
+
+            let message;
+            if (choice === '按下紅色符文' || choice === '按下藍色符文' || choice === '按下金色符文') {
+              // 如果是初始符文選擇，開始新的故事
+              message = `請生成一個全新的龍與地下城冒險故事開場。
+
+⚠️ 極重要提醒：所有輸出必須使用繁體中文，絕對不可使用簡體中文！
+
+格式要求：
+1. 所有文字必須使用繁體中文
+2. 重要的選項或關鍵字使用 **粗體** 標記
+3. 使用空行來分隔段落
+4. 必須提供恰好三個選項（不能多也不能少）
+5. 選項必須使用以下格式（包含分隔線）：
+
+===選項開始===
+1. **第一個選項** - 第一個選項的詳細描述
+2. **第二個選項** - 第二個選項的詳細描述
+3. **第三個選項** - 第三個選項的詳細描述
+===選項結束===
+
+請確保提供三個選項，每個選項都要有明確的標題和詳細的描述。
+絕對不要使用簡體中文，所有文字都必須是繁體中文！
+              
+              玩家選擇了：${choice}
+              描述：${description}`;
+            } else {
+              // 一般的選項選擇
+              message = `請生成故事的後續發展。
+
+⚠️ 極重要提醒：所有輸出必須使用繁體中文，絕對不可使用簡體中文！
+
+格式要求：
+1. 所有文字必須使用繁體中文
+2. 重要的選項或關鍵字使用 **粗體** 標記
+3. 使用空行來分隔段落
+4. 必須提供恰好三個選項（不能多也不能少）
+5. 選項必須使用以下格式（包含分隔線）：
+
+===選項開始===
+1. **第一個選項** - 第一個選項的詳細描述
+2. **第二個選項** - 第二個選項的詳細描述
+3. **第三個選項** - 第三個選項的詳細描述
+===選項結束===
+
+請確保提供三個選項，每個選項都要有明確的標題和詳細的描述。
+絕對不要使用簡體中文，所有文字都必須是繁體中文！
+              
+              玩家選擇了：${choice}
+              描述：${description}`;
+            }
+
+            // 添加玩家選擇到故事
+            this.appendToStory('player-choice', `你選擇了：${choice} - ${description}`);
+
+            // 發送選擇給 AI
+            const aiResponse = await gameAI.sendMessage(message);
+
+            // 解析 AI 回應
+            this.handleAIResponse(aiResponse);
+
+            // 重新啟用按鈕
+            this.choiceButtons.forEach(btn => btn.disabled = false);
+          });
+        });
+      }
+
+      appendToStory(type, content) {
+        const div = document.createElement('div');
+        div.className = 'text-fade-in my-4';
+
+        if (type === 'player-choice') {
+          div.innerHTML = `
+            <div class="border-l-4 border-blue-500 pl-4 bg-blue-900/20 rounded-r-lg p-3">
+              <p class="text-blue-300">${content}</p>
+            </div>
+          `;
+        } else if (type === 'ai-response') {
+          div.innerHTML = `
+            <div class="text-gray-300 leading-relaxed mb-4">
+              <p>${content}</p>
+            </div>
+          `;
+        } else if (type === 'system-message') {
+          div.innerHTML = `
+            <div class="border-l-4 border-purple-500 pl-4 bg-purple-900/20 rounded-r-lg p-3">
+              <p class="text-purple-300 italic">${content}</p>
+            </div>
+          `;
+        }
+
+        this.storyContent.appendChild(div);
+        div.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      async handleAIResponse(response) {
+        // 檢查是否需要擲骰 - 支援多種格式
+        let diceMatch = response.match(/需要擲\s*\*\*?(\w+)\*\*?\s*骰子/);
+        if (!diceMatch) {
+          // 嘗試其他可能的格式
+          diceMatch = response.match(/需要進行.*?(\w+)檢定/);
+        }
+        if (!diceMatch) {
+          // 嘗試更寬鬆的格式
+          diceMatch = response.match(/需要.*?(\w+).*?骰子/);
+        }
+        if (!diceMatch) {
+          // 嘗試檢定格式
+          diceMatch = response.match(/需要.*?(\w+)檢定/);
+        }
+
+        if (diceMatch) {
+          const diceType = diceMatch[1].toLowerCase();
+          console.log('檢測到擲骰要求:', diceMatch[0], '骰子類型:', diceType);
+          console.log('可用的骰子類型:', Object.keys(diceSystem.diceTypes));
+
+          // 先顯示 AI 的原始回應（包含擲骰要求）
+          const originalResponse = response;
+          const formattedOriginalResponse = originalResponse
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\n\n/g, '</p><p class="mb-4">')
+            .replace(/\n/g, '<br>');
+          const wrappedOriginalResponse = `<p class="mb-4">${formattedOriginalResponse}</p>`;
+          this.appendToStory('ai-response', wrappedOriginalResponse);
+
+          // 顯示擲骰動畫和結果
+          this.appendToStory('system-message', `正在擲${diceType}骰子...`);
+
+          // 執行擲骰並等待結果
+          const result = await diceSystem.autoRoll(diceType);
+
+          // 顯示擲骰結果
+          this.appendToStory('system-message', `擲${diceType}骰子的結果是：<strong>${result}</strong>`);
+
+          // 將擲骰結果發送給 AI
+          const aiResponse = await gameAI.sendMessage(
+            `擲${diceType}骰子的結果是 ${result}，請根據這個結果繼續故事。`
+          );
+
+          // 遞迴處理 AI 的新回應
+          return this.handleAIResponse(aiResponse);
+        }
+
+        // 解析選項
+        console.log('原始回應:', response);
+
+        // 尋找選項開始和結束的標記
+        const optionsStartIndex = response.indexOf('===選項開始===');
+        const optionsEndIndex = response.indexOf('===選項結束===');
+
+        let options = [];
+
+        if (optionsStartIndex !== -1 && optionsEndIndex !== -1) {
+          // 提取選項部分
+          const optionsSection = response.substring(optionsStartIndex, optionsEndIndex);
+          console.log('選項部分:', optionsSection);
+
+          // 使用正則表達式匹配選項
+          const optionPattern = /(\d+)\.\s*\*\*(.*?)\*\*\s*[-–]\s*(.*?)(?=\n\d+\.|\n*$)/gs;
+          let match;
+
+          while ((match = optionPattern.exec(optionsSection)) !== null) {
+            console.log('找到選項:', match);
+            const [, number, title, description] = match;
+            options.push({
+              title: title.trim(),
+              description: description.trim()
+            });
+          }
+
+          // 移除原文中的選項部分
+          response = response.substring(0, optionsStartIndex);
+        } else {
+          // 如果沒有找到選項標記，嘗試使用舊的正則表達式
+          const optionsPattern = /(\d)\.\s*\*\*(.*?)\*\*\s*[-–]\s*(.*?)(?=\n\d\.|\n*$|\n\n|$)/gs;
+          let match;
+
+          while ((match = optionsPattern.exec(response)) !== null) {
+            console.log('找到選項:', match);
+            const [, number, title, description] = match;
+            options.push({
+              title: title.trim(),
+              description: description.trim()
+            });
+          }
+
+          // 移除原文中的選項部分（從第一個選項開始的位置）
+          const firstOptionIndex = response.indexOf('1.');
+          if (firstOptionIndex !== -1) {
+            response = response.substring(0, firstOptionIndex);
+          }
+        }
+
+        console.log('解析後的選項:', options);
+
+        if (options.length === 3) {
+          // 更新選項按鈕
+          this.updateChoices(options);
+        } else {
+          console.warn('未找到正確的三個選項，實際找到:', options.length);
+          // 如果沒有正確的三個選項，使用預設選項
+          options = [
+            { title: '探索前方', description: '謹慎地向前探索未知的區域' },
+            { title: '搜索周圍', description: '仔細搜索當前區域尋找線索' },
+            { title: '與NPC對話', description: '嘗試與周圍的角色進行交談' }
+          ];
+          this.updateChoices(options);
+        }
+
+        // 處理剩餘文本的 markdown 語法
+        const formattedResponse = response
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // 處理粗體
+          .replace(/\n\n/g, '</p><p class="mb-4">') // 處理段落
+          .replace(/\n/g, '<br>'); // 處理換行
+
+        // 確保回應有適當的段落包裹
+        const wrappedResponse = `<p class="mb-4">${formattedResponse}</p>`;
+
+        // 更新選項按鈕
+        if (options.length > 0) {
+          this.updateChoices(options);
+        }
+
+        this.appendToStory('ai-response', wrappedResponse);
+      }
+
+      updateChoices(choices) {
+        // 確保我們有三個按鈕可以更新
+        const buttons = Array.from(this.choiceButtons).slice(0, 3);
+
+        // 更新每個按鈕
+        buttons.forEach((button, index) => {
+          if (choices[index]) {
+            const { title, description } = choices[index];
+            button.querySelector('.font-medium').textContent = title;
+            button.querySelector('.text-sm').textContent = description;
+            button.style.display = 'block';
+          } else {
+            // 如果沒有對應的選項，使用預設值
+            const defaults = [
+              { title: '按下紅色符文', description: '憑藉力量強行推開大門' },
+              { title: '按下藍色符文', description: '運用智慧解讀符文的奧秘' },
+              { title: '按下金色符文', description: '以勇氣面對未知的挑戰' }
+            ];
+            const { title, description } = defaults[index];
+            button.querySelector('.font-medium').textContent = title;
+            button.querySelector('.text-sm').textContent = description;
+            button.style.display = 'block';
+          }
+        });
+      }
+    }
+
+    // 初始化故事系統
+    let storyManager;
+    document.addEventListener('DOMContentLoaded', () => {
+      storyManager = new StoryManager();
+
+      // 確保骰子系統和故事系統能正確協作
+      if (diceSystem) {
+        diceSystem.setAutoRollCallback((diceType, result) => {
+          console.log(`自動擲骰完成: ${diceType}面骰，結果: ${result}`);
+        });
+      }
+    });
+  </script>
+
+  <script id="settingsManager">
+    document.addEventListener("DOMContentLoaded", function () {
+      const saveSettingsBtn = document.getElementById("saveSettings");
+      const modelSelect = document.getElementById("modelSelect");
+      const apiKeyInput = document.getElementById("apiKey");
+
+      loadSettings();
+
+      saveSettingsBtn.addEventListener("click", function () {
+        const settings = {
+          model: modelSelect.value,
+          apiKey: apiKeyInput.value,
+        };
+
+        localStorage.setItem("dndSettings", JSON.stringify(settings));
+
+        // 只初始化 AI 系統，不自動開始故事
+        gameAI.initialize(settings.model, settings.apiKey)
+          .then(() => {
+            showNotification("設定已保存，AI 系統已初始化", "success");
+          })
+          .catch(error => {
+            showNotification("AI 系統初始化失敗", "error");
+          });
+      });
+
+      function loadSettings() {
+        const savedSettings = localStorage.getItem("dndSettings");
+        if (savedSettings) {
+          const settings = JSON.parse(savedSettings);
+          modelSelect.value = settings.model || "llama3.2";
+          apiKeyInput.value = settings.apiKey || "";
+        }
+      }
+
+      function showNotification(message, type) {
+        const notification = document.createElement("div");
+        notification.className = `fixed top-4 right-4 px-4 py-2 rounded-lg text-white z-50 ${type === "success" ? "bg-green-600" : "bg-red-600"
+          }`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+          notification.remove();
+        }, 3000);
+      }
+    });
+  </script>
+
+  <script id="aiSystem">
+    class GameAI {
+      constructor() {
+        this.modelName = '';
+        this.apiKey = '';
+        this.baseUrl = 'http://localhost:11434/v1/chat/completions';
+        this.context = [];
+      }
+
+      async initialize(modelName, apiKey) {
+        this.modelName = modelName;
+        this.apiKey = apiKey;
+
+        // 初始化系統提示
+        this.context = [{
+          role: 'system',
+          content: `你是一個龍與地下城遊戲的 AI 主持人。
+
+⚠️ 極重要規則：所有輸出必須使用繁體中文，絕對不可使用簡體中文！
+
+你需要：
+1. 根據玩家的選擇生成有趣的故事情節
+2. 在適當的時候要求進行擲骰檢定，格式為：「需要擲D20骰子」（或D12、D10、D6）
+3. 等待系統返回擲骰結果後，根據結果決定後續發展：
+   - D20: 1-5 大失敗，6-10 失敗，11-15 成功，16-20 大成功
+   - D12: 1-3 失敗，4-9 普通，10-12 成功
+   - D10: 1-4 失敗，5-7 普通，8-10 成功
+   - D6: 1-2 失敗，3-4 普通，5-6 成功
+4. 提供三個合理的選項供玩家選擇
+5. 記住玩家的狀態和之前的選擇
+
+格式要求：
+1. 所有文字必須使用繁體中文（不可使用簡體中文）
+2. 重要內容使用 **粗體** 標記
+3. 使用空行分隔段落
+4. 選項必須使用以下格式（包含分隔線）：
+
+===選項開始===
+1. **選項標題** - 選項描述
+2. **選項標題** - 選項描述
+3. **選項標題** - 選項描述
+===選項結束===
+
+請注意：
+- 選項必須放在故事內容的最後
+- 選項必須使用上述格式，包含分隔線
+- 每個選項必須包含標題和描述
+- 標題必須用 **粗體** 標記
+- 必須提供恰好三個選項，不能多也不能少
+- 絕對不要使用簡體中文，所有文字都必須是繁體中文`
+        }];
+      }
+
+      async sendMessage(message) {
+        try {
+          const response = await fetch(this.baseUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: this.modelName,
+              messages: [...this.context, {
+                role: 'user',
+                content: message
+              }],
+              stream: false
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error('AI 回應失敗');
+          }
+
+          const data = await response.json();
+          const aiResponse = data.choices[0].message.content;
+
+          // 更新對話歷史
+          this.context.push(
+            { role: 'user', content: message },
+            { role: 'assistant', content: aiResponse }
+          );
+
+          return aiResponse;
+        } catch (error) {
+          console.error('AI 錯誤:', error);
+          return '很抱歉，AI 系統暫時無法回應。請稍後再試。';
+        }
+      }
+    }
+
+    // 初始化 AI 系統
+    const gameAI = new GameAI();
+  </script>
+
+  <script id="gameControls">
+    document.addEventListener("DOMContentLoaded", function () {
+      // 添加遊戲控制按鈕到 DOM
+      const controlButtonsContainer = document.createElement('div');
+      controlButtonsContainer.className = 'flex items-center space-x-2 mt-4';
+      controlButtonsContainer.innerHTML = `
+        <button id="saveGame" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-button text-sm font-medium transition-colors">
+          <i class="ri-save-line mr-1"></i> 儲存遊戲
+        </button>
+        <button id="restartGame" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-button text-sm font-medium transition-colors">
+          <i class="ri-restart-line mr-1"></i> 重新開始
+        </button>
+        <button id="gameSettings" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-button text-sm font-medium transition-colors">
+          <i class="ri-settings-3-line mr-1"></i> 設定
+        </button>
+        <button id="gameHelp" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-button text-sm font-medium transition-colors">
+          <i class="ri-question-line mr-1"></i> 說明
+        </button>
+      `;
+
+      // 將按鈕添加到右側面板最底部
+      document.querySelector('aside:last-child').appendChild(controlButtonsContainer);
+
+      // 獲取按鈕元素
+      const saveGameBtn = document.getElementById("saveGame");
+      const restartGameBtn = document.getElementById("restartGame");
+      const gameSettingsBtn = document.getElementById("gameSettings");
+      const gameHelpBtn = document.getElementById("gameHelp");
+
+      saveGameBtn.addEventListener("click", function () {
+        const gameState = {
+          timestamp: new Date().toISOString(),
+          character: {
+            name: "艾瑞克·鐵心",
+            level: 3,
+            hp: 42,
+            maxHp: 50,
+            mp: 18,
+            maxMp: 25,
+          },
+          story: document.getElementById("storyContent").innerHTML,
+        };
+
+        localStorage.setItem("dndGameState", JSON.stringify(gameState));
+        showGameNotification("遊戲進度已保存");
+      });
+
+      restartGameBtn.addEventListener("click", function () {
+        if (confirm("確定要重新開始遊戲嗎？當前進度將會丟失。")) {
+          localStorage.removeItem("dndGameState");
+          location.reload();
+        }
+      });
+
+      gameSettingsBtn.addEventListener("click", function () {
+        showGameNotification("設定選單功能開發中...");
+      });
+
+      gameHelpBtn.addEventListener("click", function () {
+        showGameModal(
+          "遊戲說明",
+          `
+                          <div class="space-y-4 text-sm text-gray-300">
+                              <p><strong class="text-white">遊戲玩法：</strong></p>
+                              <ul class="list-disc list-inside space-y-2 ml-4">
+                                  <li>閱讀故事內容，根據情況選擇行動</li>
+                                  <li>使用擲骰子來決定行動結果</li>
+                                  <li>管理角色的生命值和魔力值</li>
+                                  <li>收集裝備和道具來增強實力</li>
+                              </ul>
+                              <p><strong class="text-white">控制說明：</strong></p>
+                              <ul class="list-disc list-inside space-y-2 ml-4">
+                                  <li>點擊選項按鈕來做出選擇</li>
+                                  <li>使用右側面板的擲骰按鈕</li>
+                                  <li>快速行動按鈕提供常用操作</li>
+                                  <li>技能快捷鍵可快速使用能力</li>
+                              </ul>
+                          </div>
+                      `,
+        );
+      });
+
+      function showGameNotification(message) {
+        const notification = document.createElement("div");
+        notification.className =
+          "fixed bottom-4 right-4 bg-gray-800 border border-gray-600 px-4 py-2 rounded-lg text-white z-50";
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+          notification.remove();
+        }, 3000);
+      }
+
+      function showGameModal(title, content) {
+        const modal = document.createElement("div");
+        modal.className =
+          "fixed inset-0 bg-black/50 flex items-center justify-center z-50";
+        modal.innerHTML = `
+                          <div class="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-md w-full mx-4">
+                              <h3 class="text-xl font-bold text-white mb-4">${title}</h3>
+                              ${content}
+                              <button class="mt-4 bg-primary hover:bg-blue-600 px-4 py-2 rounded-button text-white w-full !rounded-button whitespace-nowrap">
+                                  確定
+                              </button>
+                          </div>
+                      `;
+
+        document.body.appendChild(modal);
+
+        modal.addEventListener("click", function (e) {
+          if (e.target === modal || e.target.tagName === "BUTTON") {
+            modal.remove();
+          }
+        });
+      }
+    });
+  </script>
+</body>
+
+</html>

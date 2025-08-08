@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet" />
   <style>
     /* --- General Styling & Variables --- */
     :root {
@@ -39,7 +40,6 @@
       align-items: center;
       justify-content: flex-start;
       min-height: 100vh;
-      padding: 2rem 1rem;
     }
 
     /* --- Header --- */
@@ -374,6 +374,7 @@
       }
     }
   </style>
+  <script src="menu.js"></script>
 </head>
 
 <body>
@@ -440,20 +441,7 @@
           <button id="restart-btn" class="btn btn-primary">Play Again</button>
         </div>
       </div>
-      <div class="footer">
-        <div class="text-gray-600 mb-2">Created with ❤️ by MUKI Vibe Coding</div>
-        <div class="flex justify-center gap-4">
-          <a href="https://muki.tw" target="_blank" class="text-blue-500 hover:text-blue-600 flex items-center gap-1">
-            <i class="ri-global-line"></i>
-            MUKI space*
-          </a>
-          <a href="https://github.com/mukiwu/web-game-vibe-coding" target="_blank"
-            class="text-blue-500 hover:text-blue-600 flex items-center gap-1">
-            <i class="ri-github-fill"></i>
-            GitHub
-          </a>
-        </div>
-      </div>
+      <div id="footer-anchor"></div>
     </main>
 
     <!-- Right Panel: Controls -->
@@ -560,6 +548,7 @@
 
   </div>
 
+  <script src="footer.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
 

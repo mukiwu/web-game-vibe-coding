@@ -34,6 +34,7 @@
       },
     };
   </script>
+  <script src="menu.js"></script>
   <style>
     :where([class^="ri-"])::before {
       content: "\f3c2";
@@ -183,22 +184,8 @@
     </div>
   </div>
 
-  <footer class="mt-8 text-center">
-    <div class="bg-white rounded-lg shadow-lg p-4 max-w-md mx-auto">
-      <div class="text-gray-600 mb-2">Created with ❤️ by MUKI Vibe Coding</div>
-      <div class="flex justify-center gap-4">
-        <a href="https://muki.tw" target="_blank" class="text-blue-500 hover:text-blue-600 flex items-center gap-1">
-          <i class="ri-global-line"></i>
-          MUKI space*
-        </a>
-        <a href="https://github.com/mukiwu/web-game-vibe-coding" target="_blank"
-          class="text-blue-500 hover:text-blue-600 flex items-center gap-1">
-          <i class="ri-github-fill"></i>
-          GitHub
-        </a>
-      </div>
-    </div>
-  </footer>
+  <footer id="footer-anchor" class="mt-8 text-center"></footer>
+  <script src="footer.js"></script>
 
   <script id="gameLogic">
     class BrickBreaker {
@@ -222,8 +209,8 @@
           x: this.canvas.width / 2,
           y: this.canvas.height - 40,
           radius: 8,
-          dx: 4,
-          dy: -4,
+          dx: 3,
+          dy: -3,
         };
 
         this.bricks = [];
@@ -325,7 +312,7 @@
           this.ball.dy = -this.ball.dy;
 
           const hitPos = (this.ball.x - this.paddle.x) / this.paddle.width;
-          this.ball.dx = (hitPos - 0.5) * 8;
+          this.ball.dx = (hitPos - 0.5) * 4;
         }
 
         this.bricks.forEach((brick) => {
