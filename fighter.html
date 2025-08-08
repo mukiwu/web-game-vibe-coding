@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>方塊消除對戰</title>
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#3b82f6",
+            secondary: "#8b5cf6",
+          },
+          borderRadius: {
+            none: "0px",
+            sm: "4px",
+            DEFAULT: "8px",
+            md: "12px",
+            lg: "16px",
+            xl: "20px",
+            "2xl": "24px",
+            "3xl": "32px",
+            full: "9999px",
+            button: "8px",
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    :where([class^="ri-"])::before {
+      content: "\f3c2";
+    }
+
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      grid-template-rows: repeat(7, 1fr);
+      gap: 2px;
+      background: #f8fafc;
+      padding: 8px;
+      border-radius: 12px;
+    }
+
+    .game-cell {
+      aspect-ratio: 1;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .game-cell:hover {
+      transform: scale(1.05);
+    }
+
+    .cell-red {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+    }
+
+    .cell-blue {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+    }
+
+    .cell-green {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+    }
+
+    .cell-yellow {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+    }
+
+    .cell-purple {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      color: white;
+    }
+
+    .cell-empty {
+      background: #e2e8f0;
+    }
+
+    .hp-bar {
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .hp-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ef4444, #f97316);
+      transition: width 0.3s ease;
+    }
+
+    .combo-display {
+      font-size: 2rem;
+      font-weight: bold;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      animation: pulse 0.5s ease-in-out;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.1);
+      }
+    }
+
+    .skill-button {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .skill-cooldown {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+
+    .damage-text {
+      position: absolute;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #ef4444;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      pointer-events: none;
+      animation: damageFloat 1s ease-out forwards;
+    }
+
+    @keyframes damageFloat {
+      0% {
+        transform: translateY(0) scale(0.5);
+        opacity: 0;
+      }
+
+      50% {
+        transform: translateY(-20px) scale(1.2);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateY(-40px) scale(1);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+  <div class="container mx-auto px-4 py-6 max-w-7xl">
+    <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-6">
+        <h1 class="text-3xl font-bold text-gray-800">方塊消除對戰</h1>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-gray-600">難度：</span>
+          <select id="difficultySelect"
+            class="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+            <option value="easy">初級</option>
+            <option value="medium">中級</option>
+            <option value="hard">高級</option>
+            <option value="insane">變態</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <button
+          class="w-10 h-10 flex items-center justify-center bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+          <i class="ri-pause-line text-gray-600"></i>
+        </button>
+        <button
+          class="w-10 h-10 flex items-center justify-center bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+          <i class="ri-volume-up-line text-gray-600"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-6 h-[calc(100vh-8rem)]">
+      <div class="bg-white rounded-xl shadow-lg p-6">
+        <div class="mb-4">
+          <div class="flex items-center gap-3 mb-2">
+            <img
+              src="https://readdy.ai/api/search-image?query=anime%20warrior%20character%20portrait%20with%20blue%20armor%20and%20determined%20expression%2C%20fantasy%20game%20character%20design%2C%20vibrant%20colors%2C%20detailed%20face%20art&width=60&height=60&seq=player1&orientation=squarish"
+              alt="玩家角色" class="w-12 h-12 rounded-full object-cover" />
+            <div>
+              <h3 class="font-bold text-gray-800">劍士 · 艾瑞克</h3>
+              <div class="hp-bar w-32">
+                <div id="playerHp" class="hp-fill" style="width: 100%"></div>
+              </div>
+              <span class="text-sm text-gray-600">HP: <span id="playerHpText">100/100</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div id="playerBoard" class="game-board mb-4"></div>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-medium text-gray-600">連擊數</span>
+            <div id="playerCombo" class="combo-display text-primary">0</div>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-medium text-gray-600">傷害倍率</span>
+            <span id="playerMultiplier" class="text-lg font-bold text-secondary">1.0x</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="playerSkill1"
+              class="skill-button bg-primary text-white px-4 py-2 !rounded-button font-medium hover:bg-blue-600 transition-colors whitespace-nowrap">
+              <i class="ri-sword-line mr-1"></i>劍氣斬
+            </button>
+            <button id="playerSkill2"
+              class="skill-button bg-secondary text-white px-4 py-2 !rounded-button font-medium hover:bg-purple-600 transition-colors whitespace-nowrap">
+              <i class="ri-shield-line mr-1"></i>防禦術
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col items-center justify-center">
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6 w-full max-w-sm">
+          <div class="text-center">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">第 3 回合</h2>
+            <div class="text-4xl font-bold text-primary mb-2" id="turnTimer">
+              15
+            </div>
+            <div class="text-sm text-gray-600">剩餘時間</div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-4 w-full max-w-sm">
+          <h3 class="font-bold text-gray-800 mb-3 text-center">戰況統計</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span class="text-gray-600">總傷害</span>
+              <span class="font-medium">245</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">最高連擊</span>
+              <span class="font-medium">8</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">技能使用</span>
+              <span class="font-medium">3 次</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-lg p-6">
+        <div class="mb-4">
+          <div class="flex items-center gap-3 mb-2">
+            <img
+              src="https://readdy.ai/api/search-image?query=anime%20mage%20character%20portrait%20with%20purple%20robes%20and%20mystical%20aura%2C%20fantasy%20game%20character%20design%2C%20magical%20staff%2C%20detailed%20face%20art&width=60&height=60&seq=enemy1&orientation=squarish"
+              alt="敵方角色" class="w-12 h-12 rounded-full object-cover" />
+            <div>
+              <h3 class="font-bold text-gray-800">法師 · 莉亞娜</h3>
+              <div class="hp-bar w-32">
+                <div id="enemyHp" class="hp-fill" style="width: 75%"></div>
+              </div>
+              <span class="text-sm text-gray-600">HP: <span id="enemyHpText">75/100</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div id="enemyBoard" class="game-board mb-4"></div>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-medium text-gray-600">連擊數</span>
+            <div id="enemyCombo" class="combo-display text-primary">3</div>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-medium text-gray-600">傷害倍率</span>
+            <span id="enemyMultiplier" class="text-lg font-bold text-secondary">1.3x</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              class="skill-button bg-purple-500 text-white px-4 py-2 !rounded-button font-medium whitespace-nowrap">
+              <i class="ri-fire-line mr-1"></i>火球術
+              <div class="skill-cooldown">2</div>
+            </button>
+            <button class="skill-button bg-blue-500 text-white px-4 py-2 !rounded-button font-medium whitespace-nowrap">
+              <i class="ri-flashlight-line mr-1"></i>冰霜術
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script id="gameLogic">
+    class PuzzleFighter {
+      constructor() {
+        this.boardSize = 7;
+        this.colors = ["red", "blue", "green", "yellow", "purple"];
+        this.playerBoard = this.initBoard();
+        this.enemyBoard = this.initBoard();
+        this.playerCombo = 0;
+        this.enemyCombo = 0;
+        this.playerHp = 100;
+        this.enemyHp = 100;
+        this.aiEnabled = true;
+        this.selectedCell = null;
+        this.turnTime = 15;
+        this.timer = null;
+        this.isGameOver = false;
+        this.currentTurn = 1;
+        this.maxCombo = 0;
+        this.totalDamage = 0;
+        this.skillsUsed = 0;
+        this.playerDefenseBonus = 0;
+        this.enemyDefenseBonus = 0;
+        this.difficulty = "easy"; // 預設初級難度
+
+        this.initGame();
+        this.startTimer();
+        this.initKeyboardControls();
+      }
+
+      initBoard() {
+        const board = [];
+        // 初始化空的遊戲板
+        for (let i = 0; i < this.boardSize; i++) {
+          board[i] = [];
+          for (let j = 0; j < this.boardSize; j++) {
+            board[i][j] = this.colors[Math.floor(Math.random() * this.colors.length)];
+          }
+        }
+
+        // 檢查並消除初始的匹配
+        let hasMatches;
+        do {
+          hasMatches = false;
+          for (let i = 0; i < this.boardSize; i++) {
+            for (let j = 0; j < this.boardSize; j++) {
+              // 檢查水平匹配
+              if (j < this.boardSize - 2 &&
+                board[i][j] === board[i][j + 1] &&
+                board[i][j] === board[i][j + 2]) {
+                board[i][j] = this.colors[Math.floor(Math.random() * this.colors.length)];
+                hasMatches = true;
+              }
+              // 檢查垂直匹配
+              if (i < this.boardSize - 2 &&
+                board[i][j] === board[i + 1][j] &&
+                board[i][j] === board[i + 2][j]) {
+                board[i][j] = this.colors[Math.floor(Math.random() * this.colors.length)];
+                hasMatches = true;
+              }
+            }
+          }
+        } while (hasMatches);
+
+        return board;
+      }
+
+      initGame() {
+        this.renderBoard("playerBoard", this.playerBoard, true);
+        this.renderBoard("enemyBoard", this.enemyBoard, false);
+        this.updateUI();
+      }
+
+      renderBoard(boardId, board, isPlayer) {
+        const boardElement = document.getElementById(boardId);
+        if (!boardElement) {
+          return;
+        }
+        boardElement.innerHTML = "";
+
+        for (let i = 0; i < this.boardSize; i++) {
+          for (let j = 0; j < this.boardSize; j++) {
+            const cell = document.createElement("div");
+            cell.className = `game-cell cell-${board[i][j]}`;
+            cell.dataset.row = i;
+            cell.dataset.col = j;
+
+            if (board[i][j] !== "empty") {
+              cell.textContent = "●";
+            }
+
+            if (isPlayer) {
+              cell.addEventListener("click", (e) => this.handleCellClick(e));
+            }
+
+            boardElement.appendChild(cell);
+          }
+        }
+      }
+
+      handleCellClick(e) {
+        // 確保點擊的是遊戲格子
+        if (!e.target.classList.contains('game-cell')) {
+          return;
+        }
+
+        const row = parseInt(e.target.dataset.row);
+        const col = parseInt(e.target.dataset.col);
+
+        // 檢查是否有有效的行列值
+        if (isNaN(row) || isNaN(col)) {
+          return;
+        }
+
+        if (this.selectedCell) {
+          if (this.selectedCell.row === row && this.selectedCell.col === col) {
+            // 取消選擇
+            this.selectedCell = null;
+            e.target.style.border = "";
+            return;
+          }
+
+          if (this.isAdjacent(this.selectedCell, { row, col })) {
+            // 交換方塊
+            this.swapCells(this.selectedCell, { row, col });
+            this.selectedCell = null;
+            document.querySelectorAll(".game-cell").forEach((cell) => {
+              cell.style.border = "";
+            });
+          } else {
+            // 如果不相鄰，選擇新的方塊
+            if (this.playerBoard[row][col] !== "empty") {
+              this.selectedCell = { row, col };
+              document.querySelectorAll(".game-cell").forEach((cell) => {
+                cell.style.border = "";
+              });
+              e.target.style.border = "3px solid #3b82f6";
+            }
+          }
+        } else {
+          // 選擇新的方塊
+          if (this.playerBoard[row][col] !== "empty") {
+            this.selectedCell = { row, col };
+            e.target.style.border = "3px solid #3b82f6";
+          }
+        }
+      }
+
+      isAdjacent(cell1, cell2) {
+        const rowDiff = Math.abs(cell1.row - cell2.row);
+        const colDiff = Math.abs(cell1.col - cell2.col);
+        return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+      }
+
+      swapCells(cell1, cell2) {
+        // 檢查是否有效的交換
+        if (!cell1 || !cell2 ||
+          cell1.row < 0 || cell1.row >= this.boardSize ||
+          cell1.col < 0 || cell1.col >= this.boardSize ||
+          cell2.row < 0 || cell2.row >= this.boardSize ||
+          cell2.col < 0 || cell2.col >= this.boardSize) {
+          return;
+        }
+
+        // 保存原始顏色
+        const color1 = this.playerBoard[cell1.row][cell1.col];
+        const color2 = this.playerBoard[cell2.row][cell2.col];
+
+        // 執行交換
+        this.playerBoard[cell1.row][cell1.col] = color2;
+        this.playerBoard[cell2.row][cell2.col] = color1;
+
+        // 更新視覺效果
+        this.renderBoard("playerBoard", this.playerBoard, true);
+
+        // 檢查是否有匹配
+        const matches = this.findMatches(this.playerBoard);
+        if (matches.length > 0) {
+          // 有匹配，處理消除
+          setTimeout(() => {
+            this.processMatches(matches, true);
+          }, 50);
+        } else {
+          // 沒有匹配，還原交換
+          setTimeout(() => {
+            this.playerBoard[cell1.row][cell1.col] = color1;
+            this.playerBoard[cell2.row][cell2.col] = color2;
+            this.renderBoard("playerBoard", this.playerBoard, true);
+          }, 150);
+        }
+      }
+
+      findMatches(board) {
+        const matches = [];
+
+        // 檢查水平匹配
+        for (let i = 0; i < this.boardSize; i++) {
+          for (let j = 0; j < this.boardSize - 2; j++) {
+            const color = board[i][j];
+            if (color !== "empty") {
+              if (color === board[i][j + 1] && color === board[i][j + 2]) {
+                const match = [
+                  { row: i, col: j },
+                  { row: i, col: j + 1 },
+                  { row: i, col: j + 2 },
+                ];
+
+                // 檢查更長的匹配
+                let k = j + 3;
+                while (k < this.boardSize && board[i][k] === color) {
+                  match.push({ row: i, col: k });
+                  k++;
+                }
+                matches.push(match);
+              }
+            }
+          }
+        }
+
+        // 檢查垂直匹配
+        for (let j = 0; j < this.boardSize; j++) {
+          for (let i = 0; i < this.boardSize - 2; i++) {
+            const color = board[i][j];
+            if (color !== "empty") {
+              if (color === board[i + 1][j] && color === board[i + 2][j]) {
+                const match = [
+                  { row: i, col: j },
+                  { row: i + 1, col: j },
+                  { row: i + 2, col: j },
+                ];
+
+                // 檢查更長的匹配
+                let k = i + 3;
+                while (k < this.boardSize && board[k][j] === color) {
+                  match.push({ row: k, col: j });
+                  k++;
+                }
+                matches.push(match);
+              }
+            }
+          }
+        }
+
+        return matches;
+      }
+
+      processMatches(matches, isPlayer) {
+        if (matches.length === 0) return;
+
+        let totalMatches = 0;
+        const board = isPlayer ? this.playerBoard : this.enemyBoard;
+        const boardElement = document.getElementById(isPlayer ? "playerBoard" : "enemyBoard");
+
+        // 播放消除動畫
+        matches.forEach((match) => {
+          totalMatches += match.length;
+          match.forEach((cell) => {
+            const cellElement = boardElement.children[cell.row * this.boardSize + cell.col];
+            cellElement.style.transform = "scale(0)";
+            cellElement.style.transition = "transform 0.2s ease-out";
+
+            setTimeout(() => {
+              board[cell.row][cell.col] = "empty";
+              cellElement.className = "game-cell cell-empty";
+              cellElement.style.transform = "";
+              cellElement.textContent = "";
+            }, 200);
+          });
+        });
+
+        // 計算傷害和更新連擊
+        setTimeout(() => {
+          if (isPlayer) {
+            this.playerCombo += matches.length;
+            const baseComboMultiplier = 1 + this.playerCombo * 0.1;
+            const damage = Math.floor(totalMatches * baseComboMultiplier * (1 - this.enemyDefenseBonus));
+            this.dealDamage(damage, false);
+            this.maxCombo = Math.max(this.maxCombo, this.playerCombo);
+            this.totalDamage += damage;
+          } else {
+            this.enemyCombo += matches.length;
+            const baseComboMultiplier = 1 + this.enemyCombo * 0.1;
+            const damage = Math.floor(totalMatches * baseComboMultiplier * (1 - this.playerDefenseBonus));
+            this.dealDamage(damage, true);
+          }
+
+          // 更新 UI 和動畫
+          const comboElement = document.getElementById(isPlayer ? "playerCombo" : "enemyCombo");
+          comboElement.style.transform = "scale(1.2)";
+          comboElement.style.color = this.getComboColor(isPlayer ? this.playerCombo : this.enemyCombo);
+
+          setTimeout(() => {
+            comboElement.style.transform = "";
+          }, 100);
+
+          this.dropBlocks(isPlayer);
+          setTimeout(() => {
+            this.fillBoard(isPlayer);
+            this.renderBoard(
+              isPlayer ? "playerBoard" : "enemyBoard",
+              board,
+              isPlayer
+            );
+
+            // 檢查新的匹配
+            setTimeout(() => {
+              const newMatches = this.findMatches(board);
+              if (newMatches.length > 0) {
+                this.processMatches(newMatches, isPlayer);
+              } else {
+                if (isPlayer) {
+                  this.playerCombo = 0;
+                } else {
+                  this.enemyCombo = 0;
+                }
+                this.updateUI();
+              }
+            }, 150);
+          }, 150);
+        }, 100);
+      }
+
+      getComboColor(combo) {
+        if (combo >= 10) return "#ff0000";
+        if (combo >= 7) return "#ff6b00";
+        if (combo >= 5) return "#ffa500";
+        if (combo >= 3) return "#4a90e2";
+        return "#3b82f6";
+      }
+
+      dropBlocks(isPlayer) {
+        const board = isPlayer ? this.playerBoard : this.enemyBoard;
+        for (let j = 0; j < this.boardSize; j++) {
+          for (let i = this.boardSize - 1; i >= 0; i--) {
+            if (board[i][j] === "empty") {
+              for (let k = i - 1; k >= 0; k--) {
+                if (board[k][j] !== "empty") {
+                  board[i][j] = board[k][j];
+                  board[k][j] = "empty";
+                  break;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      fillBoard(isPlayer) {
+        const board = isPlayer ? this.playerBoard : this.enemyBoard;
+        for (let i = 0; i < this.boardSize; i++) {
+          for (let j = 0; j < this.boardSize; j++) {
+            if (board[i][j] === "empty") {
+              board[i][j] =
+                this.colors[Math.floor(Math.random() * this.colors.length)];
+            }
+          }
+        }
+      }
+
+      dealDamage(damage, toPlayer) {
+        if (toPlayer) {
+          this.playerHp = Math.max(0, this.playerHp - damage);
+          this.showDamageText(damage, "playerBoard");
+        } else {
+          this.enemyHp = Math.max(0, this.enemyHp - damage);
+          this.showDamageText(damage, "enemyBoard");
+        }
+
+        if (this.playerHp <= 0 || this.enemyHp <= 0) {
+          this.endGame();
+        }
+      }
+
+      showDamageText(damage, boardId) {
+        const board = document.getElementById(boardId);
+        const damageElement = document.createElement("div");
+        damageElement.className = "damage-text";
+        damageElement.textContent = `-${damage}`;
+        damageElement.style.left = "50%";
+        damageElement.style.top = "50%";
+        damageElement.style.transform = "translateX(-50%)";
+
+        board.style.position = "relative";
+        board.appendChild(damageElement);
+
+        setTimeout(() => {
+          damageElement.remove();
+        }, 1000);
+      }
+
+      updateUI() {
+        // 更新連擊和倍率
+        document.getElementById("playerCombo").textContent = this.playerCombo;
+        document.getElementById("enemyCombo").textContent = this.enemyCombo;
+
+        const playerMultiplier = (1 + this.playerCombo * 0.1).toFixed(1);
+        const enemyMultiplier = (1 + this.enemyCombo * 0.1).toFixed(1);
+
+        document.getElementById("playerMultiplier").textContent = `${playerMultiplier}x`;
+        document.getElementById("enemyMultiplier").textContent = `${enemyMultiplier}x`;
+
+        // 更新血量條
+        const playerHpBar = document.getElementById("playerHp");
+        const enemyHpBar = document.getElementById("enemyHp");
+
+        playerHpBar.style.width = `${this.playerHp}%`;
+        enemyHpBar.style.width = `${this.enemyHp}%`;
+
+        // 血量低於 30% 時改變顏色
+        playerHpBar.style.background = this.playerHp <= 30
+          ? "linear-gradient(90deg, #dc2626, #ef4444)"
+          : "linear-gradient(90deg, #ef4444, #f97316)";
+
+        enemyHpBar.style.background = this.enemyHp <= 30
+          ? "linear-gradient(90deg, #dc2626, #ef4444)"
+          : "linear-gradient(90deg, #ef4444, #f97316)";
+
+        document.getElementById("playerHpText").textContent = `${this.playerHp}/100`;
+        document.getElementById("enemyHpText").textContent = `${this.enemyHp}/100`;
+
+        // 更新回合資訊
+        document.querySelector("h2.text-2xl").textContent = `第 ${this.currentTurn} 回合`;
+
+        // 更新戰況統計
+        const statsContainer = document.querySelector(".space-y-2");
+        statsContainer.innerHTML = `
+          <div class="flex justify-between">
+            <span class="text-gray-600">總傷害</span>
+            <span class="font-medium">${this.totalDamage}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">最高連擊</span>
+            <span class="font-medium">${this.maxCombo}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600">技能使用</span>
+            <span class="font-medium">${this.skillsUsed} 次</span>
+          </div>
+        `;
+      }
+
+      startTimer() {
+        clearInterval(this.timer);
+        this.timer = setInterval(() => {
+          this.turnTime--;
+          const timerElement = document.getElementById("turnTimer");
+          timerElement.textContent = this.turnTime;
+
+          // 時間少於 5 秒時改變顏色
+          if (this.turnTime <= 5) {
+            timerElement.style.color = "#dc2626";
+          } else {
+            timerElement.style.color = "#3b82f6";
+          }
+
+          if (this.turnTime <= 0) {
+            this.turnTime = 15;
+            this.currentTurn++;
+
+            // AI 回合
+            if (this.aiEnabled) {
+              // 根據難度調整思考時間
+              const thinkTime = this.difficulty === "easy" ? Math.random() * 300 + 200 :
+                this.difficulty === "medium" ? Math.random() * 250 + 150 :
+                  this.difficulty === "hard" ? Math.random() * 200 + 100 :
+                    Math.random() * 150 + 50;
+
+              setTimeout(() => {
+                this.aiMove();
+              }, thinkTime);
+            }
+          }
+        }, 1000);
+      }
+
+      endGame() {
+        if (this.isGameOver) return; // 防止重複觸發
+
+        this.isGameOver = true;
+        clearInterval(this.timer);
+
+        // 移除所有事件監聽器
+        const playerBoard = document.getElementById("playerBoard");
+        if (playerBoard) {
+          const cells = playerBoard.getElementsByClassName("game-cell");
+          Array.from(cells).forEach(cell => {
+            cell.removeEventListener("click", this.handleCellClick.bind(this));
+          });
+        }
+
+        // 禁用所有技能按鈕
+        const skillButtons = document.querySelectorAll(".skill-button");
+        skillButtons.forEach(button => {
+          button.disabled = true;
+          button.classList.add("opacity-50", "cursor-not-allowed");
+        });
+
+
+
+        const winner = this.playerHp > 0 ? "玩家勝利！" : "敵方勝利！";
+        const gameStats = `
+          總回合數：${this.currentTurn}
+          最高連擊：${this.maxCombo}
+          總傷害：${this.totalDamage}
+          技能使用：${this.skillsUsed}次
+        `;
+
+        // 使用 setTimeout 確保其他操作完成後再顯示結果
+        setTimeout(() => {
+          const gameOverDiv = document.createElement("div");
+          gameOverDiv.className = "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50";
+          gameOverDiv.innerHTML = `
+            <div class="bg-white p-8 rounded-lg shadow-xl max-w-md w-full mx-4">
+              <h2 class="text-2xl font-bold text-center mb-4">${winner}</h2>
+              <div class="whitespace-pre-line text-gray-700 mb-6">${gameStats}</div>
+              <div class="flex justify-center">
+                <button onclick="location.reload()" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-dark transition-colors">
+                  重新開始
+                </button>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(gameOverDiv);
+        }, 200);
+      }
+
+      initKeyboardControls() {
+        document.addEventListener("keydown", (e) => {
+          if (this.isGameOver) return;
+
+          const selected = this.selectedCell;
+          if (!selected) return;
+
+          switch (e.key) {
+            case "ArrowUp":
+              if (selected.row > 0) {
+                this.swapCells(selected, { row: selected.row - 1, col: selected.col });
+                this.selectedCell = null;
+                document.querySelectorAll(".game-cell").forEach(cell => cell.style.border = "");
+              }
+              break;
+            case "ArrowDown":
+              if (selected.row < this.boardSize - 1) {
+                this.swapCells(selected, { row: selected.row + 1, col: selected.col });
+                this.selectedCell = null;
+                document.querySelectorAll(".game-cell").forEach(cell => cell.style.border = "");
+              }
+              break;
+            case "ArrowLeft":
+              if (selected.col > 0) {
+                this.swapCells(selected, { row: selected.row, col: selected.col - 1 });
+                this.selectedCell = null;
+                document.querySelectorAll(".game-cell").forEach(cell => cell.style.border = "");
+              }
+              break;
+            case "ArrowRight":
+              if (selected.col < this.boardSize - 1) {
+                this.swapCells(selected, { row: selected.row, col: selected.col + 1 });
+                this.selectedCell = null;
+                document.querySelectorAll(".game-cell").forEach(cell => cell.style.border = "");
+              }
+              break;
+            case "Escape":
+              this.selectedCell = null;
+              document.querySelectorAll(".game-cell").forEach(cell => cell.style.border = "");
+              break;
+          }
+        });
+      }
+
+      aiMove() {
+        if (!this.aiEnabled || this.isGameOver) return;
+
+        // 根據難度調整 AI 行為
+        const difficultySettings = {
+          easy: { minScore: 3, moveChance: 0.8, thinkTime: { min: 200, max: 500 } },
+          medium: { minScore: 3, moveChance: 0.9, thinkTime: { min: 150, max: 400 } },
+          hard: { minScore: 4, moveChance: 0.95, thinkTime: { min: 100, max: 300 } },
+          insane: { minScore: 4, moveChance: 1.0, thinkTime: { min: 50, max: 200 } }
+        };
+
+        const settings = difficultySettings[this.difficulty];
+
+        // 評估所有可能的移動
+        let bestMove = null;
+        let bestScore = -1;
+        let allMoves = [];
+
+        // 檢查水平和垂直交換
+        const checkSwap = (i, j, isHorizontal) => {
+          const board = JSON.parse(JSON.stringify(this.enemyBoard));
+          const from = { row: i, col: j };
+          const to = {
+            row: isHorizontal ? i : i + 1,
+            col: isHorizontal ? j + 1 : j
+          };
+
+          // 執行交換
+          const temp = board[from.row][from.col];
+          board[from.row][from.col] = board[to.row][to.col];
+          board[to.row][to.col] = temp;
+
+          // 檢查匹配
+          const matches = this.findMatches(board);
+          const score = matches.reduce((sum, match) => sum + match.length, 0);
+
+          return { score, from, to };
+        };
+
+        // 檢查所有可能的移動
+        for (let i = 0; i < this.boardSize; i++) {
+          for (let j = 0; j < this.boardSize; j++) {
+            // 檢查水平交換
+            if (j < this.boardSize - 1) {
+              const { score, from, to } = checkSwap(i, j, true);
+              if (score > 0) {
+                allMoves.push({ score, from, to });
+                if (score > bestScore) {
+                  bestScore = score;
+                  bestMove = { from, to };
+                }
+              }
+            }
+            // 檢查垂直交換
+            if (i < this.boardSize - 1) {
+              const { score, from, to } = checkSwap(i, j, false);
+              if (score > 0) {
+                allMoves.push({ score, from, to });
+                if (score > bestScore) {
+                  bestScore = score;
+                  bestMove = { from, to };
+                }
+              }
+            }
+          }
+        }
+
+        // 根據難度決定是否移動
+        if (Math.random() > settings.moveChance) {
+          return; // 跳過這次移動
+        }
+
+        // 執行移動
+        if (bestMove && bestScore >= settings.minScore) {
+          const { from, to } = bestMove;
+          const color1 = this.enemyBoard[from.row][from.col];
+          const color2 = this.enemyBoard[to.row][to.col];
+
+          // 執行交換
+          this.enemyBoard[from.row][from.col] = color2;
+          this.enemyBoard[to.row][to.col] = color1;
+
+          // 更新視覺效果
+          this.renderBoard("enemyBoard", this.enemyBoard, false);
+
+          // 處理匹配
+          setTimeout(() => {
+            const matches = this.findMatches(this.enemyBoard);
+            if (matches.length > 0) {
+              this.processMatches(matches, false);
+            }
+          }, 150);
+        } else if (this.difficulty === "insane" && allMoves.length > 0) {
+          // 變態難度：即使沒有高分移動也會嘗試
+          const randomMove = allMoves[Math.floor(Math.random() * allMoves.length)];
+          const { from, to } = randomMove;
+          const color1 = this.enemyBoard[from.row][from.col];
+          const color2 = this.enemyBoard[to.row][to.col];
+
+          this.enemyBoard[from.row][from.col] = color2;
+          this.enemyBoard[to.row][to.col] = color1;
+
+          this.renderBoard("enemyBoard", this.enemyBoard, false);
+
+          setTimeout(() => {
+            const matches = this.findMatches(this.enemyBoard);
+            if (matches.length > 0) {
+              this.processMatches(matches, false);
+            }
+          }, 150);
+        }
+      }
+
+    }
+
+    let game;
+
+    document.addEventListener("DOMContentLoaded", function () {
+      game = new PuzzleFighter();
+    });
+  </script>
+  <script id="uiControls">
+    document.addEventListener("DOMContentLoaded", function () {
+      // 難度選擇器
+      const difficultySelect = document.getElementById("difficultySelect");
+
+      difficultySelect.addEventListener("change", function () {
+        if (game) {
+          game.difficulty = this.value;
+          console.log("難度已切換為:", this.value);
+        }
+      });
+    });
+  </script>
+
+  <script id="skillSystem">
+    document.addEventListener("DOMContentLoaded", function () {
+      const skill1 = document.getElementById("playerSkill1");
+      const skill2 = document.getElementById("playerSkill2");
+
+      let skill1Cooldown = 0;
+      let skill2Cooldown = 0;
+
+      skill1.addEventListener("click", function () {
+        if (skill1Cooldown === 0 && game) {
+          const damage = Math.floor(15 * (1 + game.playerCombo * 0.1));
+          game.dealDamage(damage, false);
+          skill1Cooldown = 3;
+          updateSkillCooldowns();
+        }
+      });
+
+      skill2.addEventListener("click", function () {
+        if (skill2Cooldown === 0 && game) {
+          game.playerHp = Math.min(100, game.playerHp + 10);
+          game.updateUI();
+          skill2Cooldown = 4;
+          updateSkillCooldowns();
+        }
+      });
+
+      function updateSkillCooldowns() {
+        if (skill1Cooldown > 0) {
+          const cooldownDiv = document.createElement("div");
+          cooldownDiv.className = "skill-cooldown";
+          cooldownDiv.textContent = skill1Cooldown;
+          skill1.appendChild(cooldownDiv);
+
+          const countdown = setInterval(() => {
+            skill1Cooldown--;
+            cooldownDiv.textContent = skill1Cooldown;
+            if (skill1Cooldown === 0) {
+              cooldownDiv.remove();
+              clearInterval(countdown);
+            }
+          }, 1000);
+        }
+
+        if (skill2Cooldown > 0) {
+          const cooldownDiv = document.createElement("div");
+          cooldownDiv.className = "skill-cooldown";
+          cooldownDiv.textContent = skill2Cooldown;
+          skill2.appendChild(cooldownDiv);
+
+          const countdown = setInterval(() => {
+            skill2Cooldown--;
+            cooldownDiv.textContent = skill2Cooldown;
+            if (skill2Cooldown === 0) {
+              cooldownDiv.remove();
+              clearInterval(countdown);
+            }
+          }, 1000);
+        }
+      }
+    });
+  </script>
+</body>
+
+</html>
