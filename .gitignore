@@ -1,3 +1,9 @@
 .github/
+.bmad-core/
+.claude/
+.cursor/
+.gemini/
+.qwen
+web-bundles/
 
 firebase-debug.log
