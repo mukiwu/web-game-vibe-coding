@@ -664,8 +664,8 @@
               描述：${description}`;
             }
 
-            // 添加玩家選擇到故事
-            this.appendToStory('player-choice', `你選擇了：${choice} - ${description}`);
+            // 添加玩家選擇到故事（不自動滾動）
+            this.appendToStory('player-choice', `你選擇了：${choice} - ${description}`, false);
 
             try {
               // 發送選擇給 AI
@@ -684,7 +684,7 @@
         });
       }
 
-      appendToStory(type, content) {
+      appendToStory(type, content, shouldScroll = true) {
         const div = document.createElement('div');
         div.className = 'text-fade-in my-4';
 
@@ -709,7 +709,9 @@
         }
 
         this.storyContent.appendChild(div);
-        div.scrollIntoView({ behavior: 'smooth' });
+        if (shouldScroll) {
+          div.scrollIntoView({ behavior: 'smooth' });
+        }
       }
 
       async handleAIResponse(response) {
