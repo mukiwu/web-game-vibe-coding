@@ -116,8 +116,17 @@
         <div class="flex items-center space-x-2">
           <label class="text-sm text-gray-300">Ollama Model:</label>
           <div class="relative">
-            <input type="text" id="modelSelect" placeholder="輸入 Ollama Model 名稱"
-              class="bg-gray-800 border border-gray-600 rounded-button px-3 py-2 text-sm text-white w-48 focus:outline-none focus:border-primary" />
+            <select id="modelSelect"
+              class="bg-gray-800 border border-gray-600 rounded-button px-3 py-2 text-sm text-white w-48 focus:outline-none focus:border-primary appearance-none">
+              <option value="">選擇 Ollama Model</option>
+            </select>
+            <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+              <i class="ri-arrow-down-s-line text-gray-400"></i>
+            </div>
+            <button id="refreshModels" type="button" 
+              class="absolute right-8 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+              <i class="ri-refresh-line text-sm"></i>
+            </button>
           </div>
         </div>
         <div class="flex items-center space-x-2">
@@ -129,6 +138,10 @@
           class="bg-primary hover:bg-blue-600 px-4 py-2 rounded-button text-sm font-medium transition-colors whitespace-nowrap !rounded-button">
           儲存設定
         </button>
+        <div id="connectionStatus" class="flex items-center space-x-2">
+          <div id="statusIndicator" class="w-3 h-3 rounded-full bg-gray-500"></div>
+          <span id="statusText" class="text-xs text-gray-400">未連接</span>
+        </div>
       </div>
     </div>
   </header>
@@ -791,8 +804,12 @@
       const saveSettingsBtn = document.getElementById("saveSettings");
       const modelSelect = document.getElementById("modelSelect");
       const apiKeyInput = document.getElementById("apiKey");
+      const refreshModelsBtn = document.getElementById("refreshModels");
+      const statusIndicator = document.getElementById("statusIndicator");
+      const statusText = document.getElementById("statusText");
 
       loadSettings();
+      loadAvailableModels();
 
       saveSettingsBtn.addEventListener("click", function () {
         const settings = {
@@ -800,23 +817,106 @@
           apiKey: apiKeyInput.value,
         };
 
+        if (!settings.model) {
+          showNotification("請選擇一個模型", "error");
+          return;
+        }
+
         localStorage.setItem("dndSettings", JSON.stringify(settings));
 
         // 只初始化 AI 系統，不自動開始故事
         gameAI.initialize(settings.model, settings.apiKey)
           .then(() => {
             showNotification("設定已保存，AI 系統已初始化", "success");
+            updateConnectionStatus("connected");
           })
           .catch(error => {
             showNotification("AI 系統初始化失敗", "error");
+            updateConnectionStatus("error");
           });
       });
+
+      refreshModelsBtn.addEventListener("click", function() {
+        loadAvailableModels();
+      });
+
+      async function loadAvailableModels() {
+        try {
+          updateConnectionStatus("connecting");
+          const response = await fetch('http://localhost:11434/api/tags');
+          if (!response.ok) {
+            throw new Error('無法連接到 Ollama');
+          }
+          
+          const data = await response.json();
+          
+          // 清空現有選項
+          modelSelect.innerHTML = '<option value="">選擇 Ollama Model</option>';
+          
+          // 添加可用模型
+          data.models.forEach(model => {
+            const option = document.createElement('option');
+            option.value = model.name;
+            option.textContent = `${model.name} (${formatSize(model.size)})`;
+            modelSelect.appendChild(option);
+          });
+          
+          // 如果有保存的設定，恢復選擇
+          const savedSettings = localStorage.getItem("dndSettings");
+          if (savedSettings) {
+            const settings = JSON.parse(savedSettings);
+            modelSelect.value = settings.model || "";
+          }
+          
+          updateConnectionStatus("ready");
+          
+        } catch (error) {
+          console.error('無法載入模型列表:', error);
+          updateConnectionStatus("error");
+          showNotification("無法載入 Ollama 模型列表，請確認 Ollama 是否運行", "error");
+        }
+      }
+
+      function formatSize(bytes) {
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        if (bytes === 0) return '0 B';
+        const i = Math.floor(Math.log(bytes) / Math.log(1024));
+        return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+      }
+
+      function updateConnectionStatus(status) {
+        switch(status) {
+          case "connecting":
+            statusIndicator.className = "w-3 h-3 rounded-full bg-yellow-500 animate-pulse";
+            statusText.textContent = "連接中...";
+            statusText.className = "text-xs text-yellow-400";
+            break;
+          case "ready":
+            statusIndicator.className = "w-3 h-3 rounded-full bg-green-500";
+            statusText.textContent = "Ollama 已就緒";
+            statusText.className = "text-xs text-green-400";
+            break;
+          case "connected":
+            statusIndicator.className = "w-3 h-3 rounded-full bg-blue-500";
+            statusText.textContent = "AI 已連接";
+            statusText.className = "text-xs text-blue-400";
+            break;
+          case "error":
+            statusIndicator.className = "w-3 h-3 rounded-full bg-red-500";
+            statusText.textContent = "連接失敗";
+            statusText.className = "text-xs text-red-400";
+            break;
+          default:
+            statusIndicator.className = "w-3 h-3 rounded-full bg-gray-500";
+            statusText.textContent = "未連接";
+            statusText.className = "text-xs text-gray-400";
+        }
+      }
 
       function loadSettings() {
         const savedSettings = localStorage.getItem("dndSettings");
         if (savedSettings) {
           const settings = JSON.parse(savedSettings);
-          modelSelect.value = settings.model || "llama3.2";
           apiKeyInput.value = settings.apiKey || "";
         }
       }
@@ -890,6 +990,19 @@
 
       async sendMessage(message) {
         try {
+          if (!this.modelName) {
+            throw new Error('請先選擇並保存 AI 模型設定');
+          }
+
+          // 更新連接狀態
+          const statusIndicator = document.getElementById("statusIndicator");
+          const statusText = document.getElementById("statusText");
+          if (statusIndicator && statusText) {
+            statusIndicator.className = "w-3 h-3 rounded-full bg-yellow-500 animate-pulse";
+            statusText.textContent = "AI 思考中...";
+            statusText.className = "text-xs text-yellow-400";
+          }
+
           const response = await fetch(this.baseUrl, {
             method: 'POST',
             headers: {
@@ -901,15 +1014,31 @@
                 role: 'user',
                 content: message
               }],
-              stream: false
+              stream: false,
+              temperature: 0.8,
+              max_tokens: 1000
             })
           });
 
           if (!response.ok) {
-            throw new Error('AI 回應失敗');
+            const errorData = await response.text();
+            console.error('API 錯誤回應:', errorData);
+            
+            if (response.status === 404) {
+              throw new Error(`找不到模型 "${this.modelName}"，請確認模型名稱正確或重新下載模型`);
+            } else if (response.status === 500) {
+              throw new Error('Ollama 服務器內部錯誤，請檢查模型是否正確載入');
+            } else {
+              throw new Error(`AI 服務錯誤 (${response.status}): ${errorData}`);
+            }
           }
 
           const data = await response.json();
+          
+          if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+            throw new Error('AI 回應格式不正確');
+          }
+          
           const aiResponse = data.choices[0].message.content;
 
           // 更新對話歷史
@@ -918,10 +1047,40 @@
             { role: 'assistant', content: aiResponse }
           );
 
+          // 恢復連接狀態
+          if (statusIndicator && statusText) {
+            statusIndicator.className = "w-3 h-3 rounded-full bg-blue-500";
+            statusText.textContent = "AI 已連接";
+            statusText.className = "text-xs text-blue-400";
+          }
+
           return aiResponse;
         } catch (error) {
           console.error('AI 錯誤:', error);
-          return '很抱歉，AI 系統暫時無法回應。請稍後再試。';
+          
+          // 更新錯誤狀態
+          const statusIndicator = document.getElementById("statusIndicator");
+          const statusText = document.getElementById("statusText");
+          if (statusIndicator && statusText) {
+            statusIndicator.className = "w-3 h-3 rounded-full bg-red-500";
+            statusText.textContent = "AI 連接錯誤";
+            statusText.className = "text-xs text-red-400";
+          }
+
+          // 顯示詳細錯誤訊息
+          const notification = document.createElement("div");
+          notification.className = "fixed top-4 right-4 px-4 py-2 rounded-lg text-white z-50 bg-red-600 max-w-md";
+          notification.innerHTML = `
+            <div class="font-bold">AI 系統錯誤</div>
+            <div class="text-sm mt-1">${error.message}</div>
+          `;
+          document.body.appendChild(notification);
+
+          setTimeout(() => {
+            notification.remove();
+          }, 5000);
+
+          return `**系統錯誤**: ${error.message}\n\n請檢查：\n1. Ollama 是否正在運行 (運行 \`ollama serve\`)\n2. 選擇的模型是否已下載\n3. 網絡連接是否正常\n\n您可以嘗試重新選擇模型或重啟 Ollama 服務。`;
         }
       }
     }
