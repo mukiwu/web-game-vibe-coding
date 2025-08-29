@@ -481,6 +481,15 @@
           setTimeout(() => this.diceResult.classList.remove("text-red-400"), 2000);
         }
 
+        // 檢查是否需要通知故事系統
+        if (storyManager && storyManager.waitingForDice) {
+          const diceTypeMap = { 20: 'd20', 12: 'd12', 10: 'd10', 6: 'd6' };
+          const diceType = diceTypeMap[max];
+          if (diceType && storyManager.waitingForDice === diceType) {
+            storyManager.handleDiceRoll(diceType, result);
+          }
+        }
+
         // 如果是自動擲骰，觸發回調
         if (isAuto && this.onAutoRollComplete) {
           this.onAutoRollComplete(max, result);
@@ -521,6 +530,8 @@
       constructor() {
         this.storyContent = document.getElementById('storyContent');
         this.choiceButtons = document.querySelectorAll('.w-full[class*="bg-"][class*="-600/20"]');
+        this.waitingForDice = null; // 等待擲骰的狀態
+        this.waitingForDiceContext = null; // 擲骰的上下文
         this.setupEventListeners();
       }
 
@@ -646,33 +657,26 @@
         if (diceMatch) {
           const diceType = diceMatch[1].toLowerCase();
           console.log('檢測到擲骰要求:', diceMatch[0], '骰子類型:', diceType);
-          console.log('可用的骰子類型:', Object.keys(diceSystem.diceTypes));
-
+          
           // 先顯示 AI 的原始回應（包含擲骰要求）
-          const originalResponse = response;
-          const formattedOriginalResponse = originalResponse
+          const formattedOriginalResponse = response
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\n\n/g, '</p><p class="mb-4">')
             .replace(/\n/g, '<br>');
           const wrappedOriginalResponse = `<p class="mb-4">${formattedOriginalResponse}</p>`;
           this.appendToStory('ai-response', wrappedOriginalResponse);
 
-          // 顯示擲骰動畫和結果
-          this.appendToStory('system-message', `正在擲${diceType}骰子...`);
-
-          // 執行擲骰並等待結果
-          const result = await diceSystem.autoRoll(diceType);
-
-          // 顯示擲骰結果
-          this.appendToStory('system-message', `擲${diceType}骰子的結果是：<strong>${result}</strong>`);
-
-          // 將擲骰結果發送給 AI
-          const aiResponse = await gameAI.sendMessage(
-            `擲${diceType}骰子的結果是 ${result}，請根據這個結果繼續故事。`
-          );
-
-          // 遞迴處理 AI 的新回應
-          return this.handleAIResponse(aiResponse);
+          // 顯示擲骰提示，但不自動執行
+          this.appendToStory('system-message', `請點擊右側面板的 <strong>${diceType.toUpperCase()}</strong> 骰子按鈕來進行檢定！`);
+          
+          // 設置等待擲骰狀態
+          this.waitingForDice = diceType;
+          this.waitingForDiceContext = response;
+          
+          // 高亮對應的骰子按鈕
+          this.highlightDiceButton(diceType);
+          
+          return; // 等待玩家手動擲骰
         }
 
         // 解析選項
@@ -782,6 +786,42 @@
             button.style.display = 'block';
           }
         });
+      }
+
+      highlightDiceButton(diceType) {
+        // 移除所有骰子按鈕的高亮
+        const allDiceButtons = document.querySelectorAll('#rollD20, #rollD12, #rollD10, #rollD6');
+        allDiceButtons.forEach(btn => {
+          btn.classList.remove('ring-4', 'ring-yellow-400', 'animate-pulse');
+        });
+
+        // 高亮指定的骰子按鈕
+        const targetButton = document.getElementById(`roll${diceType.toUpperCase()}`);
+        if (targetButton) {
+          targetButton.classList.add('ring-4', 'ring-yellow-400', 'animate-pulse');
+        }
+      }
+
+      async handleDiceRoll(diceType, result) {
+        // 如果正在等待這個骰子的結果
+        if (this.waitingForDice === diceType.toLowerCase()) {
+          // 清除等待狀態
+          this.waitingForDice = null;
+          
+          // 移除骰子按鈕高亮
+          this.highlightDiceButton(''); 
+          
+          // 顯示擲骰結果
+          this.appendToStory('system-message', `你擲出了 ${result} 點！`);
+
+          // 將擲骰結果發送給 AI
+          const aiResponse = await gameAI.sendMessage(
+            `玩家擲${diceType}骰子的結果是 ${result}，請根據這個結果繼續故事並提供新的選項。`
+          );
+
+          // 處理 AI 的新回應
+          this.handleAIResponse(aiResponse);
+        }
       }
     }
 
