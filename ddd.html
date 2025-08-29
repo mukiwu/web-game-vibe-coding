@@ -542,7 +542,7 @@
             const description = button.querySelector('.text-sm').textContent;
 
             // 禁用所有按鈕
-            this.choiceButtons.forEach(btn => btn.disabled = true);
+            this.disableChoiceButtons();
 
             let message;
             if (choice === '按下紅色符文' || choice === '按下藍色符文' || choice === '按下金色符文') {
@@ -603,9 +603,6 @@
 
             // 解析 AI 回應
             this.handleAIResponse(aiResponse);
-
-            // 重新啟用按鈕
-            this.choiceButtons.forEach(btn => btn.disabled = false);
           });
         });
       }
@@ -672,6 +669,9 @@
           // 設置等待擲骰狀態
           this.waitingForDice = diceType;
           this.waitingForDiceContext = response;
+          
+          // 禁用選項按鈕，防止玩家在擲骰前選擇其他選項
+          this.disableChoiceButtons();
           
           // 高亮對應的骰子按鈕
           this.highlightDiceButton(diceType);
@@ -760,6 +760,9 @@
         }
 
         this.appendToStory('ai-response', wrappedResponse);
+        
+        // 重新啟用選項按鈕（如果之前因為等待擲骰而被禁用）
+        this.enableChoiceButtons();
       }
 
       updateChoices(choices) {
@@ -814,14 +817,38 @@
           // 顯示擲骰結果
           this.appendToStory('system-message', `你擲出了 ${result} 點！`);
 
-          // 將擲骰結果發送給 AI
+          // 將擲骰結果發送給 AI，並明確要求不要提供跳過選項
           const aiResponse = await gameAI.sendMessage(
-            `玩家擲${diceType}骰子的結果是 ${result}，請根據這個結果繼續故事並提供新的選項。`
+            `玩家擲${diceType}骰子的結果是 ${result}，請根據這個結果繼續故事並提供新的選項。請不要提供跳過或略過的選項，只提供實際的遊戲選項。`
           );
 
           // 處理 AI 的新回應
           this.handleAIResponse(aiResponse);
         }
+      }
+
+      disableChoiceButtons() {
+        this.choiceButtons.forEach(button => {
+          button.disabled = true;
+          button.classList.add('opacity-50', 'cursor-not-allowed');
+          button.classList.remove('hover:bg-red-600/40', 'hover:bg-blue-600/40', 'hover:bg-amber-600/40');
+        });
+      }
+
+      enableChoiceButtons() {
+        this.choiceButtons.forEach((button, index) => {
+          button.disabled = false;
+          button.classList.remove('opacity-50', 'cursor-not-allowed');
+          
+          // 重新添加適當的 hover 效果
+          if (index === 0) {
+            button.classList.add('hover:bg-red-600/40');
+          } else if (index === 1) {
+            button.classList.add('hover:bg-blue-600/40');
+          } else if (index === 2) {
+            button.classList.add('hover:bg-amber-600/40');
+          }
+        });
       }
     }
 
@@ -1018,7 +1045,9 @@
 3. **選項標題** - 選項描述
 ===選項結束===
 
-請注意：
+嚴禁事項：
+- 絕對不要提供「跳過」、「略過」、「繼續」等無實際意義的選項
+- 每個選項都必須是具體的行動或決策
 - 選項必須放在故事內容的最後
 - 選項必須使用上述格式，包含分隔線
 - 每個選項必須包含標題和描述
