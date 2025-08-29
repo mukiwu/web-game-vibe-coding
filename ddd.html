@@ -68,6 +68,53 @@
     .progress-bar {
       background: linear-gradient(90deg, #ef4444 0%, #f97316 50%, #22c55e 100%);
     }
+
+    .loading-overlay {
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(4px);
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #374151;
+      border-top: 4px solid #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-dots {
+      display: flex;
+      gap: 4px;
+    }
+
+    .loading-dots span {
+      width: 8px;
+      height: 8px;
+      background: #3b82f6;
+      border-radius: 50%;
+      animation: loadingDots 1.4s ease-in-out infinite both;
+    }
+
+    .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+    .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0s; }
+
+    @keyframes loadingDots {
+      0%, 80%, 100% {
+        transform: scale(0);
+        opacity: 0.5;
+      }
+      40% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
   </style>
   <script>
     tailwind.config = {
@@ -114,6 +161,11 @@
       <!-- AI 設置區 -->
       <div class="flex items-center space-x-4">
         <div class="flex items-center space-x-2">
+          <label class="text-sm text-gray-300">Ollama URL:</label>
+          <input type="text" id="ollamaUrl" placeholder="http://localhost:11434"
+            class="bg-gray-800 border border-gray-600 rounded-button px-3 py-2 text-sm text-white w-48 focus:outline-none focus:border-primary" />
+        </div>
+        <div class="flex items-center space-x-2">
           <label class="text-sm text-gray-300">Ollama Model:</label>
           <div class="relative">
             <select id="modelSelect"
@@ -145,6 +197,20 @@
       </div>
     </div>
   </header>
+
+  <!-- Loading 覆蓋層 -->
+  <div id="loadingOverlay" class="fixed inset-0 z-50 loading-overlay hidden flex items-center justify-center">
+    <div class="bg-gray-900/90 backdrop-blur-sm rounded-xl p-8 text-center border border-gray-700/50">
+      <div class="loading-spinner mx-auto mb-4"></div>
+      <div class="text-white font-medium mb-2" id="loadingTitle">AI 思考中...</div>
+      <div class="text-gray-400 text-sm mb-4" id="loadingSubtext">正在生成故事內容</div>
+      <div class="loading-dots justify-center">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </div>
 
   <!-- 主要遊戲區域 -->
   <main class="flex h-[calc(100vh-80px)] p-6 gap-6">
@@ -544,6 +610,9 @@
             // 禁用所有按鈕
             this.disableChoiceButtons();
 
+            // 顯示 loading
+            gameAI.showLoading('正在生成故事內容...', '請稍候， AI 正在思考中');
+
             let message;
             if (choice === '按下紅色符文' || choice === '按下藍色符文' || choice === '按下金色符文') {
               // 如果是初始符文選擇，開始新的故事
@@ -598,11 +667,19 @@
             // 添加玩家選擇到故事
             this.appendToStory('player-choice', `你選擇了：${choice} - ${description}`);
 
-            // 發送選擇給 AI
-            const aiResponse = await gameAI.sendMessage(message);
+            try {
+              // 發送選擇給 AI
+              const aiResponse = await gameAI.sendMessage(message);
 
-            // 解析 AI 回應
-            this.handleAIResponse(aiResponse);
+              // 解析 AI 回應
+              this.handleAIResponse(aiResponse);
+            } catch (error) {
+              // 隱藏 loading
+              gameAI.hideLoading();
+              // 重新啟用按鈕
+              this.enableChoiceButtons();
+              console.error('AI 回應錯誤:', error);
+            }
           });
         });
       }
@@ -817,13 +894,21 @@
           // 顯示擲骰結果
           this.appendToStory('system-message', `你擲出了 ${result} 點！`);
 
-          // 將擲骰結果發送給 AI，並明確要求不要提供跳過選項
-          const aiResponse = await gameAI.sendMessage(
-            `玩家擲${diceType}骰子的結果是 ${result}，請根據這個結果繼續故事並提供新的選項。請不要提供跳過或略過的選項，只提供實際的遊戲選項。`
-          );
+          // 顯示 loading
+          gameAI.showLoading('正在處理擲骰結果...', '根據你的擲骰結果生成後續劇情');
 
-          // 處理 AI 的新回應
-          this.handleAIResponse(aiResponse);
+          try {
+            // 將擲骰結果發送給 AI，並明確要求不要提供跳過選項
+            const aiResponse = await gameAI.sendMessage(
+              `玩家擲${diceType}骰子的結果是 ${result}，請根據這個結果繼續故事並提供新的選項。請不要提供跳過或略過的選項，只提供實際的遊戲選項。`
+            );
+
+            // 處理 AI 的新回應
+            this.handleAIResponse(aiResponse);
+          } catch (error) {
+            gameAI.hideLoading();
+            console.error('擲骰結果處理錯誤:', error);
+          }
         }
       }
 
@@ -871,6 +956,7 @@
       const saveSettingsBtn = document.getElementById("saveSettings");
       const modelSelect = document.getElementById("modelSelect");
       const apiKeyInput = document.getElementById("apiKey");
+      const ollamaUrlInput = document.getElementById("ollamaUrl");
       const refreshModelsBtn = document.getElementById("refreshModels");
       const statusIndicator = document.getElementById("statusIndicator");
       const statusText = document.getElementById("statusText");
@@ -882,6 +968,7 @@
         const settings = {
           model: modelSelect.value,
           apiKey: apiKeyInput.value,
+          ollamaUrl: ollamaUrlInput.value || 'http://localhost:11434',
         };
 
         if (!settings.model) {
@@ -892,7 +979,7 @@
         localStorage.setItem("dndSettings", JSON.stringify(settings));
 
         // 只初始化 AI 系統，不自動開始故事
-        gameAI.initialize(settings.model, settings.apiKey)
+        gameAI.initialize(settings.model, settings.apiKey, settings.ollamaUrl)
           .then(() => {
             showNotification("設定已保存，AI 系統已初始化", "success");
             updateConnectionStatus("connected");
@@ -910,7 +997,8 @@
       async function loadAvailableModels() {
         try {
           updateConnectionStatus("connecting");
-          const response = await fetch('http://localhost:11434/api/tags');
+          const ollamaUrl = ollamaUrlInput.value || 'http://localhost:11434';
+          const response = await fetch(`${ollamaUrl}/api/tags`);
           if (!response.ok) {
             throw new Error('無法連接到 Ollama');
           }
@@ -933,6 +1021,7 @@
           if (savedSettings) {
             const settings = JSON.parse(savedSettings);
             modelSelect.value = settings.model || "";
+            ollamaUrlInput.value = settings.ollamaUrl || 'http://localhost:11434';
           }
           
           updateConnectionStatus("ready");
@@ -985,6 +1074,7 @@
         if (savedSettings) {
           const settings = JSON.parse(savedSettings);
           apiKeyInput.value = settings.apiKey || "";
+          ollamaUrlInput.value = settings.ollamaUrl || 'http://localhost:11434';
         }
       }
 
@@ -1007,13 +1097,16 @@
       constructor() {
         this.modelName = '';
         this.apiKey = '';
-        this.baseUrl = 'http://localhost:11434/v1/chat/completions';
+        this.ollamaUrl = 'http://localhost:11434';
+        this.baseUrl = '';
         this.context = [];
       }
 
-      async initialize(modelName, apiKey) {
+      async initialize(modelName, apiKey, ollamaUrl = 'http://localhost:11434') {
         this.modelName = modelName;
         this.apiKey = apiKey;
+        this.ollamaUrl = ollamaUrl;
+        this.baseUrl = `${ollamaUrl}/v1/chat/completions`;
 
         // 初始化系統提示
         this.context = [{
@@ -1062,6 +1155,9 @@
           if (!this.modelName) {
             throw new Error('請先選擇並保存 AI 模型設定');
           }
+
+          // 顯示 loading 畫面
+          this.showLoading('正在生成故事內容...');
 
           // 更新連接狀態
           const statusIndicator = document.getElementById("statusIndicator");
@@ -1123,6 +1219,9 @@
             statusText.className = "text-xs text-blue-400";
           }
 
+          // 隱藏 loading 畫面
+          this.hideLoading();
+
           return aiResponse;
         } catch (error) {
           console.error('AI 錯誤:', error);
@@ -1149,7 +1248,29 @@
             notification.remove();
           }, 5000);
 
+          // 隱藏 loading 畫面
+          this.hideLoading();
+
           return `**系統錯誤**: ${error.message}\n\n請檢查：\n1. Ollama 是否正在運行 (運行 \`ollama serve\`)\n2. 選擇的模型是否已下載\n3. 網絡連接是否正常\n\n您可以嘗試重新選擇模型或重啟 Ollama 服務。`;
+        }
+      }
+
+      showLoading(message = 'AI 思考中...', subtext = '請稍候') {
+        const overlay = document.getElementById('loadingOverlay');
+        const title = document.getElementById('loadingTitle');
+        const subtitle = document.getElementById('loadingSubtext');
+        
+        if (overlay) {
+          overlay.classList.remove('hidden');
+          title.textContent = message;
+          subtitle.textContent = subtext;
+        }
+      }
+
+      hideLoading() {
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) {
+          overlay.classList.add('hidden');
         }
       }
     }
