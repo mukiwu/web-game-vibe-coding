@@ -710,7 +710,8 @@
 
         this.storyContent.appendChild(div);
         if (shouldScroll) {
-          div.scrollIntoView({ behavior: 'smooth' });
+          // 只在故事區域內滾動，不影響整個頁面
+          this.storyContent.scrollTop = this.storyContent.scrollHeight;
         }
       }
 
