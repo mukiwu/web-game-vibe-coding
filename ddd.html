@@ -84,8 +84,13 @@
     }
 
     @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
     }
 
     .loading-dots {
@@ -101,15 +106,27 @@
       animation: loadingDots 1.4s ease-in-out infinite both;
     }
 
-    .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
-    .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
-    .loading-dots span:nth-child(3) { animation-delay: 0s; }
+    .loading-dots span:nth-child(1) {
+      animation-delay: -0.32s;
+    }
+
+    .loading-dots span:nth-child(2) {
+      animation-delay: -0.16s;
+    }
+
+    .loading-dots span:nth-child(3) {
+      animation-delay: 0s;
+    }
 
     @keyframes loadingDots {
-      0%, 80%, 100% {
+
+      0%,
+      80%,
+      100% {
         transform: scale(0);
         opacity: 0.5;
       }
+
       40% {
         transform: scale(1);
         opacity: 1;
@@ -176,7 +193,7 @@
               <i class="ri-arrow-down-s-line text-gray-400"></i>
             </div>
           </div>
-          <button id="refreshModels" type="button" 
+          <button id="refreshModels" type="button"
             class="bg-gray-700 hover:bg-gray-600 p-2 rounded-button text-gray-400 hover:text-white transition-colors flex items-center justify-center w-9 h-9">
             <i class="ri-refresh-line text-base"></i>
           </button>
@@ -338,7 +355,7 @@
           class="w-full bg-red-600/20 hover:bg-red-600/40 border border-red-500/50 rounded-lg p-4 text-left transition-all duration-200 group !rounded-button whitespace-nowrap">
           <div class="flex items-center">
             <div
-              class="w-8 h-8 flex items-center justify-center mr-3 bg-red-500 rounded-full group-hover:scale-110 transition-transform">
+              class="w-8 h-8 flex items-center justify-center shrink-0 mr-3 bg-red-500 rounded-full group-hover:scale-110 transition-transform">
               <i class="ri-fire-line text-white"></i>
             </div>
             <div>
@@ -352,7 +369,7 @@
           class="w-full bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/50 rounded-lg p-4 text-left transition-all duration-200 group !rounded-button whitespace-nowrap">
           <div class="flex items-center">
             <div
-              class="w-8 h-8 flex items-center justify-center mr-3 bg-blue-500 rounded-full group-hover:scale-110 transition-transform">
+              class="w-8 h-8 flex items-center justify-center shrink-0 mr-3 bg-blue-500 rounded-full group-hover:scale-110 transition-transform">
               <i class="ri-brain-line text-white"></i>
             </div>
             <div>
@@ -366,7 +383,7 @@
           class="w-full bg-amber-600/20 hover:bg-amber-600/40 border border-amber-500/50 rounded-lg p-4 text-left transition-all duration-200 group !rounded-button whitespace-nowrap">
           <div class="flex items-center">
             <div
-              class="w-8 h-8 flex items-center justify-center mr-3 bg-amber-500 rounded-full group-hover:scale-110 transition-transform">
+              class="w-8 h-8 flex items-center justify-center shrink-0 mr-3 bg-amber-500 rounded-full group-hover:scale-110 transition-transform">
               <i class="ri-heart-line text-white"></i>
             </div>
             <div>
@@ -552,6 +569,12 @@
           const diceTypeMap = { 20: 'd20', 12: 'd12', 10: 'd10', 6: 'd6' };
           const diceType = diceTypeMap[max];
           if (diceType && storyManager.waitingForDice === diceType) {
+            // 確保角色管理器已初始化並連接到故事管理器
+            if (characterManager) {
+              console.log('擲骰系統：通知故事管理器處理結果，角色管理器已就緒');
+            } else {
+              console.warn('擲骰系統：角色管理器尚未初始化');
+            }
             storyManager.handleDiceRoll(diceType, result);
           }
         }
@@ -734,7 +757,7 @@
         if (diceMatch) {
           const diceType = diceMatch[1].toLowerCase();
           console.log('檢測到擲骰要求:', diceMatch[0], '骰子類型:', diceType);
-          
+
           // 先顯示 AI 的原始回應（包含擲骰要求）
           const formattedOriginalResponse = response
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -745,17 +768,17 @@
 
           // 顯示擲骰提示，但不自動執行
           this.appendToStory('system-message', `請點擊右側面板的 <strong>${diceType.toUpperCase()}</strong> 骰子按鈕來進行檢定！`);
-          
+
           // 設置等待擲骰狀態
           this.waitingForDice = diceType;
           this.waitingForDiceContext = response;
-          
+
           // 禁用選項按鈕，防止玩家在擲骰前選擇其他選項
           this.disableChoiceButtons();
-          
+
           // 高亮對應的骰子按鈕
           this.highlightDiceButton(diceType);
-          
+
           return; // 等待玩家手動擲骰
         }
 
@@ -840,7 +863,7 @@
         }
 
         this.appendToStory('ai-response', wrappedResponse);
-        
+
         // 重新啟用選項按鈕（如果之前因為等待擲骰而被禁用）
         this.enableChoiceButtons();
       }
@@ -890,29 +913,359 @@
         if (this.waitingForDice === diceType.toLowerCase()) {
           // 清除等待狀態
           this.waitingForDice = null;
-          
+
           // 移除骰子按鈕高亮
-          this.highlightDiceButton(''); 
-          
+          this.highlightDiceButton('');
+
           // 顯示擲骰結果
           this.appendToStory('system-message', `你擲出了 ${result} 點！`);
+
+          // 根據擲骰結果計算成功程度
+          const diceOutcome = this.calculateDiceOutcome(diceType, result);
+
+          // 顯示擲骰成功程度
+          this.appendToStory('system-message', `檢定結果：${diceOutcome.description}`);
 
           // 顯示 loading
           gameAI.showLoading('正在處理擲骰結果...', '根據你的擲骰結果生成後續劇情');
 
           try {
-            // 將擲骰結果發送給 AI，並明確要求不要提供跳過選項
-            const aiResponse = await gameAI.sendMessage(
-              `玩家擲${diceType}骰子的結果是 ${result}，請根據這個結果繼續故事並提供新的選項。請不要提供跳過或略過的選項，只提供實際的遊戲選項。`
-            );
+            // 構建包含角色數據和擲骰結果的詳細提示
+            const characterData = characterManager ? characterManager.getCharacter() : null;
+            const aiPrompt = this.buildDiceResultPrompt(diceType, result, diceOutcome, characterData);
 
-            // 處理 AI 的新回應
-            this.handleAIResponse(aiResponse);
+            // 將擲骰結果發送給 AI
+            const aiResponse = await gameAI.sendMessage(aiPrompt);
+
+            // 處理 AI 的新回應，包括角色數據變化
+            await this.handleAIResponseWithCharacter(aiResponse, diceOutcome);
           } catch (error) {
             gameAI.hideLoading();
             console.error('擲骰結果處理錯誤:', error);
           }
         }
+      }
+
+      // 計算擲骰結果的成功程度
+      calculateDiceOutcome(diceType, result) {
+        const diceMax = { d20: 20, d12: 12, d10: 10, d6: 6 }[diceType.toLowerCase()];
+
+        let outcome = {
+          success: false,
+          level: 'failure',
+          description: '',
+          modifier: 0
+        };
+
+        // 根據不同骰子類型判定成功程度
+        switch (diceType.toLowerCase()) {
+          case 'd20':
+            if (result === 20) {
+              outcome = { success: true, level: 'critical_success', description: '大成功！', modifier: 2.0 };
+            } else if (result >= 16) {
+              outcome = { success: true, level: 'success', description: '成功', modifier: 1.5 };
+            } else if (result >= 11) {
+              outcome = { success: true, level: 'partial_success', description: '部分成功', modifier: 1.0 };
+            } else if (result >= 6) {
+              outcome = { success: false, level: 'failure', description: '失敗', modifier: 0.5 };
+            } else if (result === 1) {
+              outcome = { success: false, level: 'critical_failure', description: '大失敗！', modifier: 0 };
+            } else {
+              outcome = { success: false, level: 'failure', description: '失敗', modifier: 0.5 };
+            }
+            break;
+
+          case 'd12':
+            if (result >= 10) {
+              outcome = { success: true, level: 'success', description: '成功', modifier: 1.5 };
+            } else if (result >= 7) {
+              outcome = { success: true, level: 'partial_success', description: '部分成功', modifier: 1.0 };
+            } else if (result >= 4) {
+              outcome = { success: false, level: 'failure', description: '失敗', modifier: 0.5 };
+            } else {
+              outcome = { success: false, level: 'critical_failure', description: '大失敗', modifier: 0 };
+            }
+            break;
+
+          case 'd10':
+            if (result >= 8) {
+              outcome = { success: true, level: 'success', description: '成功', modifier: 1.5 };
+            } else if (result >= 6) {
+              outcome = { success: true, level: 'partial_success', description: '部分成功', modifier: 1.0 };
+            } else if (result >= 3) {
+              outcome = { success: false, level: 'failure', description: '失敗', modifier: 0.5 };
+            } else {
+              outcome = { success: false, level: 'critical_failure', description: '大失敗', modifier: 0 };
+            }
+            break;
+
+          case 'd6':
+            if (result >= 5) {
+              outcome = { success: true, level: 'success', description: '成功', modifier: 1.2 };
+            } else if (result >= 3) {
+              outcome = { success: false, level: 'partial_failure', description: '部分失敗', modifier: 0.8 };
+            } else {
+              outcome = { success: false, level: 'failure', description: '失敗', modifier: 0.3 };
+            }
+            break;
+        }
+
+        return outcome;
+      }
+
+      // 構建包含角色數據的擲骰結果提示
+      buildDiceResultPrompt(diceType, result, outcome, characterData) {
+        const basePrompt = `
+⚠️ 極重要提醒：所有輸出必須使用繁體中文，絕對不可使用簡體中文！
+
+玩家擲${diceType.toUpperCase()}骰子結果：
+- 點數：${result}
+- 檢定結果：${outcome.description}
+- 成功程度：${outcome.level}
+- 效果倍率：${outcome.modifier}
+
+當前角色狀態：
+- 姓名：${characterData?.personal?.name || '未知'}
+- 等級：${characterData?.personal?.level || 1}
+- 生命值：${characterData?.resources?.hp?.current || 0}/${characterData?.resources?.hp?.max || 0}
+- 魔力值：${characterData?.resources?.mp?.current || 0}/${characterData?.resources?.mp?.max || 0}
+- 經驗值：${characterData?.resources?.experience?.current || 0}/${characterData?.resources?.experience?.max || 1000}
+
+請根據擲骰結果生成故事後續發展，並在故事最後提供角色數據變化建議：
+
+格式要求：
+1. 所有文字必須使用繁體中文
+2. 故事內容要反映擲骰結果的成功/失敗程度
+3. 在故事最後添加角色數據變化建議，格式如下：
+
+===角色變化建議===
+HP_CHANGE: +5 或 -10 (根據情況)
+MP_CHANGE: -3 或 +2 (根據情況) 
+EXP_CHANGE: +15 或 +30 (根據成功程度)
+GOLD_CHANGE: +5 或 -2 (如適用)
+REASON: 變化原因的簡短說明
+===變化建議結束===
+
+4. 提供三個新的選項：
+
+===選項開始===
+1. **選項標題** - 選項描述
+2. **選項標題** - 選項描述  
+3. **選項標題** - 選項描述
+===選項結束===
+
+請確保根據擲骰結果的成功程度給予適當的獎勵或懲罰。成功時獲得更多經驗值和獎勵，失敗時可能受到傷害或損失。
+`;
+
+        return basePrompt;
+      }
+
+      // 處理包含角色變化的 AI 回應
+      async handleAIResponseWithCharacter(response, diceOutcome) {
+        console.log('原始 AI 回應:', response);
+
+        // 解析角色數據變化
+        const characterChanges = this.parseCharacterChanges(response);
+
+        // 套用角色數據變化
+        if (characterChanges && characterManager) {
+          console.log('套用角色變化:', characterChanges);
+
+          // 套用基本數值變化
+          if (Object.keys(characterChanges.data.resources).length > 0 || Object.keys(characterChanges.data.inventory).length > 0) {
+            characterManager.updateCharacter(characterChanges.data);
+          }
+
+          // 處理獎勵
+          if (characterChanges.rewards && characterChanges.rewards.length > 0) {
+            for (const reward of characterChanges.rewards) {
+              if (reward.type === 'item') {
+                characterManager.addItem(reward.item);
+                this.appendToStory('system-message', `🎁 獲得物品：${reward.item.name} x${reward.item.quantity}`);
+              } else if (reward.type === 'equipment') {
+                characterManager.addItem(reward.item);
+                this.appendToStory('system-message', `⚔️ 獲得裝備：${reward.item.name} - ${reward.item.description}`);
+
+                // 詢問是否立即裝備
+                setTimeout(() => {
+                  if (confirm(`你獲得了 ${reward.item.name}！是否立即裝備？\n\n${reward.item.description}`)) {
+                    characterManager.equipItem(reward.item);
+                    this.appendToStory('system-message', `✨ 已裝備：${reward.item.name}`);
+                  }
+                }, 1000);
+              }
+            }
+          }
+
+          // 顯示變化原因
+          if (characterChanges.reason) {
+            this.appendToStory('system-message', `${characterChanges.reason}`);
+          }
+        }
+
+        // 移除角色變化建議部分，只處理故事內容和選項
+        const cleanResponse = this.cleanResponseFromCharacterData(response);
+
+        // 處理剩餘的 AI 回應（故事內容和選項）
+        this.handleAIResponse(cleanResponse);
+      }
+
+      // 解析角色數據變化建議
+      parseCharacterChanges(response) {
+        const changeStartIndex = response.indexOf('===角色變化建議===');
+        const changeEndIndex = response.indexOf('===變化建議結束===');
+
+        if (changeStartIndex === -1 || changeEndIndex === -1) {
+          console.log('未找到角色變化建議標記');
+          return null;
+        }
+
+        const changeSection = response.substring(changeStartIndex, changeEndIndex);
+        console.log('角色變化區段:', changeSection);
+
+        const changes = {
+          data: { resources: {}, inventory: {} },
+          reason: '',
+          rewards: []
+        };
+
+        // 解析各種變化
+        const hpMatch = changeSection.match(/HP_CHANGE:\s*([+-]?\d+)/);
+        const mpMatch = changeSection.match(/MP_CHANGE:\s*([+-]?\d+)/);
+        const expMatch = changeSection.match(/EXP_CHANGE:\s*([+-]?\d+)/);
+        const goldMatch = changeSection.match(/GOLD_CHANGE:\s*([+-]?\d+)/);
+        const itemRewardMatch = changeSection.match(/ITEM_REWARD:\s*(.+?)(?=\n|$)/);
+        const equipRewardMatch = changeSection.match(/EQUIP_REWARD:\s*(.+?)(?=\n|$)/);
+        const reasonMatch = changeSection.match(/REASON:\s*(.+?)(?=\n|$)/);
+
+        // 取得當前角色數據
+        const currentCharacter = characterManager ? characterManager.getCharacter() : null;
+        if (!currentCharacter) return null;
+
+        // 套用 HP 變化
+        if (hpMatch) {
+          const hpChange = parseInt(hpMatch[1]);
+          changes.data.resources.hp = {
+            current: Math.max(0, Math.min(
+              currentCharacter.resources.hp.max,
+              currentCharacter.resources.hp.current + hpChange
+            ))
+          };
+        }
+
+        // 套用 MP 變化
+        if (mpMatch) {
+          const mpChange = parseInt(mpMatch[1]);
+          changes.data.resources.mp = {
+            current: Math.max(0, Math.min(
+              currentCharacter.resources.mp.max,
+              currentCharacter.resources.mp.current + mpChange
+            ))
+          };
+        }
+
+        // 套用經驗值變化
+        if (expMatch) {
+          const expChange = parseInt(expMatch[1]);
+          changes.data.resources.experience = {
+            current: Math.min(
+              currentCharacter.resources.experience.max,
+              currentCharacter.resources.experience.current + expChange
+            )
+          };
+        }
+
+        // 套用金幣變化
+        if (goldMatch) {
+          const goldChange = parseInt(goldMatch[1]);
+          changes.data.inventory = {
+            ...currentCharacter.inventory,
+            gold: Math.max(0, currentCharacter.inventory.gold + goldChange)
+          };
+        }
+
+        // 處理物品獎勵
+        if (itemRewardMatch) {
+          const rewardData = itemRewardMatch[1].trim();
+          const parts = rewardData.split('|');
+
+          if (parts.length >= 5) {
+            const [name, icon, type, quantity, description] = parts;
+            const item = {
+              name: name.trim(),
+              icon: icon.trim(),
+              type: type.trim(),
+              quantity: parseInt(quantity.trim()) || 1,
+              description: description.trim()
+            };
+
+            changes.rewards.push({
+              type: 'item',
+              item: item
+            });
+          }
+        }
+
+        // 處理裝備獎勵
+        if (equipRewardMatch) {
+          const rewardData = equipRewardMatch[1].trim();
+          const parts = rewardData.split('|');
+
+          if (parts.length >= 6) {
+            const [name, icon, equipType, statsStr, specialEffect, description] = parts;
+
+            // 解析屬性加成
+            const stats = {};
+            if (statsStr.trim()) {
+              statsStr.split(',').forEach(statPair => {
+                const [stat, value] = statPair.trim().split(':');
+                if (stat && value) {
+                  stats[stat.trim()] = parseInt(value.trim()) || 0;
+                }
+              });
+            }
+
+            const equipment = {
+              name: name.trim(),
+              icon: icon.trim(),
+              type: equipType.trim(),
+              stats: stats,
+              description: description.trim()
+            };
+
+            // 處理特殊效果 (hpBonus, mpBonus 等)
+            if (specialEffect.trim()) {
+              const effects = specialEffect.trim().split(',');
+              effects.forEach(effect => {
+                const [effectType, value] = effect.trim().split(':');
+                if (effectType && value) {
+                  equipment[effectType.trim()] = parseInt(value.trim()) || 0;
+                }
+              });
+            }
+
+            changes.rewards.push({
+              type: 'equipment',
+              item: equipment
+            });
+          }
+        }
+
+        // 設定變化原因
+        if (reasonMatch) {
+          changes.reason = reasonMatch[1].trim();
+        }
+
+        return changes;
+      }
+
+      // 清理 AI 回應中的角色數據部分
+      cleanResponseFromCharacterData(response) {
+        const changeStartIndex = response.indexOf('===角色變化建議===');
+        if (changeStartIndex !== -1) {
+          return response.substring(0, changeStartIndex).trim();
+        }
+        return response;
       }
 
       disableChoiceButtons() {
@@ -927,7 +1280,7 @@
         this.choiceButtons.forEach((button, index) => {
           button.disabled = false;
           button.classList.remove('opacity-50', 'cursor-not-allowed');
-          
+
           // 重新添加適當的 hover 效果
           if (index === 0) {
             button.classList.add('hover:bg-red-600/40');
@@ -993,7 +1346,7 @@
           });
       });
 
-      refreshModelsBtn.addEventListener("click", function() {
+      refreshModelsBtn.addEventListener("click", function () {
         loadAvailableModels();
       });
 
@@ -1005,12 +1358,12 @@
           if (!response.ok) {
             throw new Error('無法連接到 Ollama');
           }
-          
+
           const data = await response.json();
-          
+
           // 清空現有選項
           modelSelect.innerHTML = '<option value="">選擇 Ollama Model</option>';
-          
+
           // 添加可用模型
           data.models.forEach(model => {
             const option = document.createElement('option');
@@ -1018,7 +1371,7 @@
             option.textContent = `${model.name} (${formatSize(model.size)})`;
             modelSelect.appendChild(option);
           });
-          
+
           // 如果有保存的設定，恢復選擇
           const savedSettings = localStorage.getItem("dndSettings");
           if (savedSettings) {
@@ -1026,9 +1379,9 @@
             modelSelect.value = settings.model || "";
             ollamaUrlInput.value = settings.ollamaUrl || 'http://localhost:11434';
           }
-          
+
           updateConnectionStatus("ready");
-          
+
         } catch (error) {
           console.error('無法載入模型列表:', error);
           updateConnectionStatus("error");
@@ -1045,7 +1398,7 @@
       }
 
       function updateConnectionStatus(status) {
-        switch(status) {
+        switch (status) {
           case "connecting":
             statusIndicator.className = "w-3 h-3 rounded-full bg-yellow-500 animate-pulse";
             statusText.textContent = "連接中...";
@@ -1122,13 +1475,23 @@
 你需要：
 1. 根據玩家的選擇生成有趣的故事情節
 2. 在適當的時候要求進行擲骰檢定，格式為：「需要擲D20骰子」（或D12、D10、D6）
-3. 等待系統返回擲骰結果後，根據結果決定後續發展：
-   - D20: 1-5 大失敗，6-10 失敗，11-15 成功，16-20 大成功
-   - D12: 1-3 失敗，4-9 普通，10-12 成功
-   - D10: 1-4 失敗，5-7 普通，8-10 成功
-   - D6: 1-2 失敗，3-4 普通，5-6 成功
-4. 提供三個合理的選項供玩家選擇
-5. 記住玩家的狀態和之前的選擇
+3. 當收到擲骰結果提示時，根據結果決定後續發展，並提供角色數據變化建議：
+   - 成功時：給予經驗值、金幣等正面獎勵
+   - 失敗時：造成傷害、消耗資源等負面效果
+   - 大成功/大失敗：效果加倍
+
+4. **重要：當處理擲骰結果時，必須提供角色數據變化建議**
+   格式如下：
+   ===角色變化建議===
+   HP_CHANGE: +5 或 -10 (根據情況)
+   MP_CHANGE: -3 或 +2 (根據情況) 
+   EXP_CHANGE: +15 或 +30 (根據成功程度)
+   GOLD_CHANGE: +5 或 -2 (如適用)
+   REASON: 變化原因的簡短說明
+   ===變化建議結束===
+
+5. 提供三個合理的選項供玩家選擇
+6. 記住玩家的狀態和之前的選擇
 
 格式要求：
 1. 所有文字必須使用繁體中文（不可使用簡體中文）
@@ -1142,6 +1505,18 @@
 3. **選項標題** - 選項描述
 ===選項結束===
 
+角色數據變化指南：
+- HP_CHANGE: 戰鬥傷害 (-5 到 -15)、治療 (+3 到 +10)、休息 (+1 到 +5)
+- MP_CHANGE: 施法 (-2 到 -8)、冥想 (+2 到 +5)、魔法恢復 (+1 到 +3)
+- EXP_CHANGE: 成功完成挑戰 (+10 到 +50)、解決謎題 (+5 到 +20)、戰鬥勝利 (+15 到 +30)
+- GOLD_CHANGE: 戰利品 (+5 到 +50)、購買物品 (-10 到 -100)、賄賂 (-5 到 -20)
+- ITEM_REWARD: 獲得物品獎勵，格式: 物品名稱|圖標|類型|數量|描述
+- EQUIP_REWARD: 獲得裝備獎勵，格式: 裝備名稱|圖標|類型|屬性加成|特殊效果|描述
+
+物品和裝備獎勵例子：
+- ITEM_REWARD: 治療藥水|ri-flask-line|item|2|恢復 10-17 HP
+- EQUIP_REWARD: 烈焰劍|ri-sword-line|weapon|strength:3,dexterity:1||+3力量+1敏捷的火屬性劍
+
 嚴禁事項：
 - 絕對不要提供「跳過」、「略過」、「繼續」等無實際意義的選項
 - 每個選項都必須是具體的行動或決策
@@ -1150,7 +1525,8 @@
 - 每個選項必須包含標題和描述
 - 標題必須用 **粗體** 標記
 - 必須提供恰好三個選項，不能多也不能少
-- 絕對不要使用簡體中文，所有文字都必須是繁體中文`
+- 絕對不要使用簡體中文，所有文字都必須是繁體中文
+- 當處理擲骰結果時，必須提供角色變化建議，不可省略`
         }];
       }
 
@@ -1192,7 +1568,7 @@
           if (!response.ok) {
             const errorData = await response.text();
             console.error('API 錯誤回應:', errorData);
-            
+
             if (response.status === 404) {
               throw new Error(`找不到模型 "${this.modelName}"，請確認模型名稱正確或重新下載模型`);
             } else if (response.status === 500) {
@@ -1203,11 +1579,11 @@
           }
 
           const data = await response.json();
-          
+
           if (!data.choices || !data.choices[0] || !data.choices[0].message) {
             throw new Error('AI 回應格式不正確');
           }
-          
+
           const aiResponse = data.choices[0].message.content;
 
           // 更新對話歷史
@@ -1229,7 +1605,7 @@
           return aiResponse;
         } catch (error) {
           console.error('AI 錯誤:', error);
-          
+
           // 更新錯誤狀態
           const statusIndicator = document.getElementById("statusIndicator");
           const statusText = document.getElementById("statusText");
@@ -1263,7 +1639,7 @@
         const overlay = document.getElementById('loadingOverlay');
         const title = document.getElementById('loadingTitle');
         const subtitle = document.getElementById('loadingSubtext');
-        
+
         if (overlay) {
           overlay.classList.remove('hidden');
           title.textContent = message;
@@ -1281,6 +1657,800 @@
 
     // 初始化 AI 系統
     const gameAI = new GameAI();
+  </script>
+
+  <script id="characterManager">
+    class CharacterManager {
+      constructor() {
+        // 初始化角色數據結構
+        this.character = {
+          personal: {
+            name: "艾瑞克·鐵心",
+            class: "戰士",
+            race: "人類",
+            level: 3,
+            avatar: "https://readdy.ai/api/search-image?query=fantasy%20warrior%20character%20portrait%20with%20medieval%20armor%20and%20determined%20expression%2C%20detailed%20digital%20art%20style%2C%20warm%20lighting%2C%20heroic%20pose%2C%20fantasy%20game%20character%20design&width=200&height=200&seq=character001&orientation=squarish"
+          },
+          stats: {
+            strength: 16,
+            dexterity: 14,
+            intelligence: 13
+          },
+          resources: {
+            hp: { current: 42, max: 50 },
+            mp: { current: 18, max: 25 },
+            experience: { current: 850, max: 1000 }
+          },
+          inventory: {
+            weapons: [
+              { name: "鋼鐵長劍", icon: "ri-sword-line", equipped: true }
+            ],
+            armor: [
+              { name: "皮革盾牌", icon: "ri-shield-line", equipped: true }
+            ],
+            items: [
+              { name: "治療藥水", icon: "ri-flask-line", quantity: 3 }
+            ],
+            gold: 127
+          },
+          statusEffects: []
+        };
+
+        // 綁定 DOM 元素
+        this.characterPanel = document.querySelector('aside:first-of-type');
+        this.bindElements();
+
+        // 初始化事件系統
+        this.eventListeners = new Map();
+        this.setupEventSystem();
+      }
+
+      bindElements() {
+        // 綁定需要動態更新的 DOM 元素
+        this.elements = {
+          name: this.characterPanel.querySelector('h3'),
+          classLevel: this.characterPanel.querySelector('p'),
+          avatar: this.characterPanel.querySelector('img'),
+          strengthValue: this.characterPanel.querySelector('.text-red-400'),
+          dexterityValue: this.characterPanel.querySelector('.text-green-400'),
+          intelligenceValue: this.characterPanel.querySelector('.text-blue-400'),
+          hpCurrent: this.characterPanel.querySelector('.text-red-400').closest('.space-y-3').querySelector('span:last-child'),
+          hpBar: this.characterPanel.querySelector('.progress-bar'),
+          mpCurrent: this.characterPanel.querySelector('.text-blue-400').closest('div').querySelector('span:last-child'),
+          mpBar: this.characterPanel.querySelector('.bg-blue-500'),
+          inventory: this.characterPanel.querySelector('.grid-cols-2')
+        };
+      }
+
+      setupEventSystem() {
+        // 創建自定義事件系統
+        this.eventBus = {
+          listeners: new Map(),
+
+          on: (event, callback) => {
+            if (!this.eventBus.listeners.has(event)) {
+              this.eventBus.listeners.set(event, []);
+            }
+            this.eventBus.listeners.get(event).push(callback);
+          },
+
+          emit: (event, data) => {
+            if (this.eventBus.listeners.has(event)) {
+              this.eventBus.listeners.get(event).forEach(callback => {
+                callback(data);
+              });
+            }
+          }
+        };
+
+        // 設置事件監聽器
+        this.eventBus.on('character.updated', (changes) => {
+          this.renderCharacterPanel();
+          this.showChangeNotification(changes);
+        });
+      }
+
+      // 更新角色數據
+      updateCharacter(changes) {
+        console.log('更新角色數據:', changes);
+
+        const oldData = JSON.parse(JSON.stringify(this.character));
+
+        // 深度合併數據
+        this.deepMerge(this.character, changes);
+
+        // 重新計算屬性（處理裝備變化）
+        if (changes.inventory) {
+          this.recalculateStats();
+        }
+
+        // 檢查是否需要等級提升
+        if (changes.resources && changes.resources.experience) {
+          this.checkLevelUp();
+        }
+
+        // 觸發更新事件
+        this.eventBus.emit('character.updated', {
+          changes: changes,
+          oldData: oldData,
+          newData: this.character
+        });
+
+        return this.character;
+      }
+
+      // 深度合併對象
+      deepMerge(target, source) {
+        for (const key in source) {
+          if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+            if (!target[key]) target[key] = {};
+            this.deepMerge(target[key], source[key]);
+          } else {
+            target[key] = source[key];
+          }
+        }
+      }
+
+      // 渲染角色面板
+      renderCharacterPanel() {
+        const { personal, stats, resources, inventory } = this.character;
+
+        // 更新基本資訊
+        if (this.elements.name) {
+          this.elements.name.textContent = personal.name;
+        }
+
+        if (this.elements.classLevel) {
+          this.elements.classLevel.textContent = `${personal.race}${personal.class} · 等級 ${personal.level}`;
+        }
+
+        // 更新屬性值
+        if (this.elements.strengthValue) {
+          this.elements.strengthValue.textContent = stats.strength;
+        }
+        if (this.elements.dexterityValue) {
+          this.elements.dexterityValue.textContent = stats.dexterity;
+        }
+        if (this.elements.intelligenceValue) {
+          this.elements.intelligenceValue.textContent = stats.intelligence;
+        }
+
+        // 更新生命值
+        if (this.elements.hpCurrent) {
+          this.elements.hpCurrent.textContent = `${resources.hp.current}/${resources.hp.max}`;
+        }
+        if (this.elements.hpBar) {
+          const hpPercentage = (resources.hp.current / resources.hp.max) * 100;
+          this.elements.hpBar.style.width = `${hpPercentage}%`;
+        }
+
+        // 更新魔力值
+        if (this.elements.mpCurrent) {
+          this.elements.mpCurrent.textContent = `${resources.mp.current}/${resources.mp.max}`;
+        }
+        if (this.elements.mpBar) {
+          const mpPercentage = (resources.mp.current / resources.mp.max) * 100;
+          this.elements.mpBar.style.width = `${mpPercentage}%`;
+        }
+
+        // 更新裝備道具
+        this.renderInventory();
+      }
+
+      // 渲染裝備道具
+      renderInventory() {
+        if (!this.elements.inventory) return;
+
+        const { inventory } = this.character;
+        const items = [
+          ...inventory.weapons.filter(item => item.equipped),
+          ...inventory.armor.filter(item => item.equipped),
+          ...inventory.items.slice(0, 1), // 只顯示第一個道具
+          { name: `金幣 x${inventory.gold}`, icon: "ri-coins-line", isGold: true }
+        ];
+
+        // 清空現有內容
+        this.elements.inventory.innerHTML = '';
+
+        // 渲染每個物品
+        items.forEach(item => {
+          const itemDiv = document.createElement('div');
+          itemDiv.className = 'bg-gray-800/50 rounded-lg p-3 text-center';
+
+          let itemName = item.name;
+          if (item.quantity && item.quantity > 1) {
+            itemName += ` x${item.quantity}`;
+          }
+
+          itemDiv.innerHTML = `
+            <div class="w-8 h-8 flex items-center justify-center mx-auto mb-1">
+              <i class="${item.icon} ${item.isGold ? 'text-yellow-400' : item.equipped ? 'text-amber-400' : 'text-red-400'} text-lg"></i>
+            </div>
+            <div class="text-xs text-gray-300">${itemName}</div>
+          `;
+
+          this.elements.inventory.appendChild(itemDiv);
+        });
+      }
+
+      // 顯示變化通知
+      showChangeNotification(changeData) {
+        const { changes } = changeData;
+
+        // 檢查資源變化
+        if (changes.resources) {
+          if (changes.resources.hp) {
+            const hpChange = changes.resources.hp.current - (changeData.oldData.resources.hp.current || 0);
+            if (hpChange !== 0) {
+              this.createFloatingText(
+                hpChange > 0 ? `+${hpChange} HP` : `${hpChange} HP`,
+                hpChange > 0 ? 'text-green-400' : 'text-red-400'
+              );
+            }
+          }
+
+          if (changes.resources.mp) {
+            const mpChange = changes.resources.mp.current - (changeData.oldData.resources.mp.current || 0);
+            if (mpChange !== 0) {
+              this.createFloatingText(
+                mpChange > 0 ? `+${mpChange} MP` : `${mpChange} MP`,
+                mpChange > 0 ? 'text-blue-400' : 'text-blue-600'
+              );
+            }
+          }
+        }
+
+        // 檢查經驗值變化
+        if (changes.resources && changes.resources.experience) {
+          const expChange = changes.resources.experience.current - (changeData.oldData.resources.experience.current || 0);
+          if (expChange > 0) {
+            this.createFloatingText(`+${expChange} EXP`, 'text-purple-400');
+          }
+        }
+      }
+
+      // 創建浮動文字效果
+      createFloatingText(text, colorClass) {
+        const floatingText = document.createElement('div');
+        floatingText.className = `fixed z-50 font-bold text-lg pointer-events-none ${colorClass}`;
+        floatingText.textContent = text;
+        floatingText.style.cssText = `
+          left: 20px;
+          top: 50%;
+          transform: translateY(-50%);
+          animation: floatUp 2s ease-out forwards;
+        `;
+
+        document.body.appendChild(floatingText);
+
+        setTimeout(() => {
+          floatingText.remove();
+        }, 2000);
+      }
+
+      // 獲取角色數據
+      getCharacter() {
+        return JSON.parse(JSON.stringify(this.character));
+      }
+
+      // 保存角色數據到本地存儲
+      saveCharacter() {
+        localStorage.setItem('dnd_character_data', JSON.stringify(this.character));
+      }
+
+      // 從本地存儲加載角色數據
+      loadCharacter() {
+        const saved = localStorage.getItem('dnd_character_data');
+        if (saved) {
+          try {
+            const savedCharacter = JSON.parse(saved);
+            this.character = { ...this.character, ...savedCharacter };
+            this.renderCharacterPanel();
+          } catch (error) {
+            console.error('加載角色數據失敗:', error);
+          }
+        }
+      }
+
+      // 裝備管理方法
+      equipItem(item) {
+        console.log('裝備物品:', item);
+
+        const { type } = item;
+        const targetSlot = type === 'weapon' ? 'weapons' : type === 'armor' ? 'armor' : null;
+
+        if (!targetSlot) {
+          console.error('無效的裝備類型:', type);
+          return false;
+        }
+
+        // 卸下當前同類型裝備
+        this.character.inventory[targetSlot].forEach(equippedItem => {
+          if (equippedItem.equipped) {
+            equippedItem.equipped = false;
+            console.log('卸下裝備:', equippedItem.name);
+          }
+        });
+
+        // 檢查是否已在背包中
+        const existingItem = this.character.inventory[targetSlot].find(invItem => invItem.name === item.name);
+
+        if (existingItem) {
+          existingItem.equipped = true;
+        } else {
+          // 添加到背包並裝備
+          item.equipped = true;
+          this.character.inventory[targetSlot].push(item);
+        }
+
+        // 重新計算屬性加成
+        this.recalculateStats();
+
+        // 觸發更新事件
+        this.eventBus.emit('character.updated', {
+          changes: { inventory: this.character.inventory },
+          oldData: this.character,
+          newData: this.character
+        });
+
+        return true;
+      }
+
+      // 卸下裝備
+      unequipItem(itemName) {
+        console.log('卸下裝備:', itemName);
+
+        let found = false;
+
+        ['weapons', 'armor'].forEach(slot => {
+          const item = this.character.inventory[slot].find(item => item.name === itemName && item.equipped);
+          if (item) {
+            item.equipped = false;
+            found = true;
+          }
+        });
+
+        if (found) {
+          this.recalculateStats();
+          this.eventBus.emit('character.updated', {
+            changes: { inventory: this.character.inventory },
+            oldData: this.character,
+            newData: this.character
+          });
+        }
+
+        return found;
+      }
+
+      // 添加物品到背包
+      addItem(item) {
+        console.log('添加物品:', item);
+
+        if (item.type === 'weapon' || item.type === 'armor') {
+          // 裝備類物品
+          const targetSlot = item.type === 'weapon' ? 'weapons' : 'armor';
+          const existingItem = this.character.inventory[targetSlot].find(invItem => invItem.name === item.name);
+
+          if (!existingItem) {
+            this.character.inventory[targetSlot].push({
+              ...item,
+              equipped: false
+            });
+          }
+        } else {
+          // 一般物品（可堆疊）
+          const existingItem = this.character.inventory.items.find(invItem => invItem.name === item.name);
+
+          if (existingItem) {
+            existingItem.quantity = (existingItem.quantity || 1) + (item.quantity || 1);
+          } else {
+            this.character.inventory.items.push({
+              ...item,
+              quantity: item.quantity || 1
+            });
+          }
+        }
+
+        this.eventBus.emit('character.updated', {
+          changes: { inventory: this.character.inventory },
+          oldData: this.character,
+          newData: this.character
+        });
+      }
+
+      // 使用物品
+      useItem(itemName) {
+        console.log('使用物品:', itemName);
+
+        const item = this.character.inventory.items.find(item => item.name === itemName);
+        if (!item || item.quantity <= 0) {
+          console.log('物品不存在或數量不足');
+          return false;
+        }
+
+        // 套用物品效果
+        let effects = {};
+
+        switch (itemName) {
+          case '治療藥水':
+            const healAmount = Math.floor(Math.random() * 8) + 10; // 10-17 HP
+            effects.resources = {
+              hp: {
+                current: Math.min(
+                  this.character.resources.hp.max,
+                  this.character.resources.hp.current + healAmount
+                )
+              }
+            };
+            this.createFloatingText(`+${healAmount} HP`, 'text-green-400');
+            break;
+
+          case '魔力藥水':
+            const manaAmount = Math.floor(Math.random() * 6) + 5; // 5-10 MP
+            effects.resources = {
+              mp: {
+                current: Math.min(
+                  this.character.resources.mp.max,
+                  this.character.resources.mp.current + manaAmount
+                )
+              }
+            };
+            this.createFloatingText(`+${manaAmount} MP`, 'text-blue-400');
+            break;
+
+          case '力量藥劑':
+            effects.statusEffects = [
+              ...this.character.statusEffects.filter(effect => effect.type !== 'strength_boost'),
+              { type: 'strength_boost', duration: 3, bonus: 2 }
+            ];
+            this.createFloatingText('+2 力量 (3回合)', 'text-red-400');
+            break;
+        }
+
+        // 消耗物品
+        item.quantity -= 1;
+        if (item.quantity <= 0) {
+          this.character.inventory.items = this.character.inventory.items.filter(i => i !== item);
+        }
+
+        // 套用效果
+        if (Object.keys(effects).length > 0) {
+          this.updateCharacter(effects);
+        }
+
+        return true;
+      }
+
+      // 重新計算角色屬性（包含裝備加成）
+      recalculateStats() {
+        // 使用基礎屬性（包含等級加成）或預設值
+        const baseStats = this.character.baseStats || {
+          strength: 16,
+          dexterity: 14,
+          intelligence: 13
+        };
+
+        // 計算裝備加成
+        let equipBonus = { strength: 0, dexterity: 0, intelligence: 0 };
+        let hpBonus = 0;
+        let mpBonus = 0;
+
+        // 武器加成
+        this.character.inventory.weapons.forEach(weapon => {
+          if (weapon.equipped && weapon.stats) {
+            Object.keys(weapon.stats).forEach(stat => {
+              if (equipBonus.hasOwnProperty(stat)) {
+                equipBonus[stat] += weapon.stats[stat];
+              }
+            });
+            hpBonus += weapon.hpBonus || 0;
+            mpBonus += weapon.mpBonus || 0;
+          }
+        });
+
+        // 防具加成
+        this.character.inventory.armor.forEach(armor => {
+          if (armor.equipped && armor.stats) {
+            Object.keys(armor.stats).forEach(stat => {
+              if (equipBonus.hasOwnProperty(stat)) {
+                equipBonus[stat] += armor.stats[stat];
+              }
+            });
+            hpBonus += armor.hpBonus || 0;
+            mpBonus += armor.mpBonus || 0;
+          }
+        });
+
+        // 狀態效果加成
+        let statusBonus = { strength: 0, dexterity: 0, intelligence: 0 };
+        this.character.statusEffects.forEach(effect => {
+          if (effect.type === 'strength_boost') {
+            statusBonus.strength += effect.bonus;
+          }
+          // 可以添加更多狀態效果類型
+        });
+
+        // 更新最終屬性
+        this.character.stats = {
+          strength: baseStats.strength + equipBonus.strength + statusBonus.strength,
+          dexterity: baseStats.dexterity + equipBonus.dexterity + statusBonus.dexterity,
+          intelligence: baseStats.intelligence + equipBonus.intelligence + statusBonus.intelligence
+        };
+
+        // 更新資源上限（基礎值 + 等級加成 + 裝備加成）
+        const level = this.character.personal.level;
+        const baseHpMax = 50 + ((level - 3) * 5); // 每級+5 HP
+        const baseMpMax = 25 + ((level - 3) * 3); // 每級+3 MP
+
+        this.character.resources.hp.max = baseHpMax + hpBonus;
+        this.character.resources.mp.max = baseMpMax + mpBonus;
+      }
+
+      // 處理狀態效果持續時間
+      processStatusEffects() {
+        let effectsChanged = false;
+
+        this.character.statusEffects = this.character.statusEffects.filter(effect => {
+          effect.duration--;
+          if (effect.duration <= 0) {
+            effectsChanged = true;
+            this.createFloatingText(`${effect.type} 效果結束`, 'text-gray-400');
+            return false;
+          }
+          return true;
+        });
+
+        if (effectsChanged) {
+          this.recalculateStats();
+          this.renderCharacterPanel();
+        }
+      }
+
+      // 等級提升系統
+      checkLevelUp() {
+        const { experience, level } = this.character.resources;
+        const { personal } = this.character;
+
+        if (experience.current >= experience.max) {
+          // 等級提升！
+          const oldLevel = personal.level;
+          personal.level += 1;
+
+          // 重置經驗值
+          experience.current = experience.current - experience.max;
+          experience.max = this.calculateExpForNextLevel(personal.level);
+
+          // 提升屬性（根據職業不同有不同加成）
+          const statGains = this.getStatGainsForLevelUp(personal.class);
+
+          // 重新計算基礎屬性（包含等級加成）
+          this.recalculateBaseStats();
+
+          // 提升資源上限
+          const hpGain = Math.floor(Math.random() * 6) + 5; // 5-10 HP
+          const mpGain = Math.floor(Math.random() * 4) + 2; // 2-5 MP
+
+          this.character.resources.hp.max += hpGain;
+          this.character.resources.mp.max += mpGain;
+
+          // 完全恢復生命和魔力
+          this.character.resources.hp.current = this.character.resources.hp.max;
+          this.character.resources.mp.current = this.character.resources.mp.max;
+
+          // 顯示等級提升效果
+          this.showLevelUpEffect(oldLevel, personal.level, statGains, hpGain, mpGain);
+
+          // 觸發更新事件
+          this.eventBus.emit('character.updated', {
+            changes: {
+              personal: { level: personal.level },
+              resources: this.character.resources
+            },
+            oldData: { personal: { level: oldLevel } },
+            newData: this.character
+          });
+
+          return true;
+        }
+
+        return false;
+      }
+
+      // 計算下一等級所需經驗值
+      calculateExpForNextLevel(level) {
+        return Math.floor(1000 * Math.pow(1.5, level - 3)); // 指數增長
+      }
+
+      // 根據職業獲得等級提升時的屬性加成
+      getStatGainsForLevelUp(characterClass) {
+        const gains = { strength: 0, dexterity: 0, intelligence: 0 };
+
+        switch (characterClass) {
+          case '戰士':
+            gains.strength = Math.floor(Math.random() * 3) + 2; // 2-4
+            gains.dexterity = Math.floor(Math.random() * 2) + 1; // 1-2
+            gains.intelligence = Math.floor(Math.random() * 2); // 0-1
+            break;
+          case '法師':
+            gains.intelligence = Math.floor(Math.random() * 3) + 2; // 2-4
+            gains.dexterity = Math.floor(Math.random() * 2) + 1; // 1-2
+            gains.strength = Math.floor(Math.random() * 2); // 0-1
+            break;
+          case '盜賊':
+            gains.dexterity = Math.floor(Math.random() * 3) + 2; // 2-4
+            gains.intelligence = Math.floor(Math.random() * 2) + 1; // 1-2
+            gains.strength = Math.floor(Math.random() * 2) + 1; // 1-2
+            break;
+          default:
+            // 平均成長
+            gains.strength = Math.floor(Math.random() * 2) + 1;
+            gains.dexterity = Math.floor(Math.random() * 2) + 1;
+            gains.intelligence = Math.floor(Math.random() * 2) + 1;
+        }
+
+        return gains;
+      }
+
+      // 重新計算基礎屬性（包含等級加成）
+      recalculateBaseStats() {
+        const level = this.character.personal.level;
+        const characterClass = this.character.personal.class;
+
+        // 基礎屬性會隨等級成長
+        let baseStats = { strength: 16, dexterity: 14, intelligence: 13 };
+
+        // 等級加成（每級小幅提升）
+        const levelBonus = level - 3; // 從等級3開始計算
+
+        if (characterClass === '戰士') {
+          baseStats.strength += Math.floor(levelBonus * 1.5);
+          baseStats.dexterity += Math.floor(levelBonus * 0.8);
+          baseStats.intelligence += Math.floor(levelBonus * 0.5);
+        } else if (characterClass === '法師') {
+          baseStats.intelligence += Math.floor(levelBonus * 1.5);
+          baseStats.dexterity += Math.floor(levelBonus * 0.8);
+          baseStats.strength += Math.floor(levelBonus * 0.5);
+        } else if (characterClass === '盜賊') {
+          baseStats.dexterity += Math.floor(levelBonus * 1.5);
+          baseStats.intelligence += Math.floor(levelBonus * 0.8);
+          baseStats.strength += Math.floor(levelBonus * 0.8);
+        }
+
+        // 重新計算最終屬性（會在 recalculateStats 中加上裝備和狀態加成）
+        this.character.baseStats = baseStats;
+        this.recalculateStats();
+      }
+
+      // 顯示等級提升效果
+      showLevelUpEffect(oldLevel, newLevel, statGains, hpGain, mpGain) {
+        // 創建華麗的等級提升通知
+        const levelUpModal = document.createElement('div');
+        levelUpModal.className = 'fixed inset-0 bg-black/70 flex items-center justify-center z-50 level-up-modal';
+        levelUpModal.innerHTML = `
+          <div class="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl p-8 text-center max-w-md mx-4 transform scale-0 level-up-content border-4 border-yellow-300">
+            <div class="text-4xl font-bold text-white mb-4 animate-bounce">
+              🎉 LEVEL UP! 🎉
+            </div>
+            <div class="text-2xl font-bold text-white mb-6">
+              等級 ${oldLevel} → ${newLevel}
+            </div>
+            <div class="bg-white/20 rounded-lg p-4 mb-4">
+              <div class="text-white font-medium mb-2">屬性提升:</div>
+              <div class="grid grid-cols-3 gap-2 text-sm">
+                <div class="text-red-200">力量 +${statGains.strength}</div>
+                <div class="text-green-200">敏捷 +${statGains.dexterity}</div>
+                <div class="text-blue-200">智力 +${statGains.intelligence}</div>
+              </div>
+              <div class="mt-2 text-sm">
+                <div class="text-red-200">生命值上限 +${hpGain}</div>
+                <div class="text-blue-200">魔力值上限 +${mpGain}</div>
+              </div>
+            </div>
+            <div class="text-white/90 text-sm mb-4">
+              生命值和魔力值已完全恢復！
+            </div>
+            <button class="bg-white text-orange-600 font-bold py-2 px-6 rounded-lg hover:bg-gray-100 transition-colors" onclick="this.closest('.level-up-modal').remove()">
+              繼續冒險
+            </button>
+          </div>
+        `;
+
+        document.body.appendChild(levelUpModal);
+
+        // 動畫效果
+        setTimeout(() => {
+          const content = levelUpModal.querySelector('.level-up-content');
+          content.style.transform = 'scale(1)';
+          content.style.transition = 'transform 0.5s ease-out';
+        }, 100);
+
+        // 音效模擬（創建浮動文字）
+        setTimeout(() => {
+          this.createFloatingText('LEVEL UP!', 'text-yellow-400 text-2xl font-bold');
+        }, 500);
+      }
+
+      // 重置角色數據
+      resetCharacter() {
+        this.character = {
+          personal: {
+            name: "艾瑞克·鐵心",
+            class: "戰士",
+            race: "人類",
+            level: 3,
+            avatar: "https://readdy.ai/api/search-image?query=fantasy%20warrior%20character%20portrait%20with%20medieval%20armor%20and%20determined%20expression%2C%20detailed%20digital%20art%20style%2C%20warm%20lighting%2C%20heroic%20pose%2C%20fantasy%20game%20character%20design&width=200&height=200&seq=character001&orientation=squarish"
+          },
+          stats: { strength: 16, dexterity: 14, intelligence: 13 },
+          resources: {
+            hp: { current: 42, max: 50 },
+            mp: { current: 18, max: 25 },
+            experience: { current: 850, max: 1000 }
+          },
+          inventory: {
+            weapons: [{
+              name: "鋼鐵長劍",
+              icon: "ri-sword-line",
+              type: "weapon",
+              equipped: true,
+              stats: { strength: 2 },
+              description: "鋒利的鋼鐵長劍，+2 力量"
+            }],
+            armor: [{
+              name: "皮革盾牌",
+              icon: "ri-shield-line",
+              type: "armor",
+              equipped: true,
+              hpBonus: 5,
+              description: "堅固的皮革盾牌，+5 生命值上限"
+            }],
+            items: [
+              { name: "治療藥水", icon: "ri-flask-line", quantity: 3, description: "恢復 10-17 HP" },
+              { name: "魔力藥水", icon: "ri-flask-fill", quantity: 2, description: "恢復 5-10 MP" }
+            ],
+            gold: 127
+          },
+          statusEffects: []
+        };
+
+        // 重新計算屬性
+        this.recalculateStats();
+        this.renderCharacterPanel();
+      }
+    }
+
+    // 添加浮動文字動畫 CSS
+    const floatingTextStyle = document.createElement('style');
+    floatingTextStyle.textContent = `
+      @keyframes floatUp {
+        0% {
+          opacity: 0;
+          transform: translateY(-50%) translateX(0px);
+        }
+        20% {
+          opacity: 1;
+          transform: translateY(-50%) translateX(10px);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-50%) translateX(30px) translateY(-30px);
+        }
+      }
+    `;
+    document.head.appendChild(floatingTextStyle);
+
+    // 全域角色管理器實例
+    let characterManager;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // 初始化角色管理器
+      characterManager = new CharacterManager();
+
+      // 加載保存的角色數據
+      characterManager.loadCharacter();
+
+      // 初始渲染
+      characterManager.renderCharacterPanel();
+    });
   </script>
 
   <script id="gameControls">
@@ -1301,6 +2471,9 @@
         <button id="gameHelp" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-button text-sm font-medium transition-colors">
           <i class="ri-question-line mr-1"></i> 說明
         </button>
+        <button id="testCharacter" class="bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded-button text-sm font-medium transition-colors">
+          <i class="ri-flask-line mr-1"></i> 測試
+        </button>
       `;
 
       // 將按鈕添加到右側面板最底部
@@ -1311,6 +2484,7 @@
       const restartGameBtn = document.getElementById("restartGame");
       const gameSettingsBtn = document.getElementById("gameSettings");
       const gameHelpBtn = document.getElementById("gameHelp");
+      const testCharacterBtn = document.getElementById("testCharacter");
 
       saveGameBtn.addEventListener("click", function () {
         const gameState = {
@@ -1363,6 +2537,257 @@
                           </div>
                       `,
         );
+      });
+
+      testCharacterBtn.addEventListener("click", function () {
+        if (characterManager) {
+          // 創建測試選項
+          const testOptions = [
+            "模擬戰鬥傷害 (-10 HP)",
+            "使用治療藥水 (+15 HP)",
+            "消耗魔力 (-5 MP)",
+            "獲得經驗值 (+50 EXP)",
+            "獲得金幣 (+20 金幣)",
+            "測試擲骰整合功能",
+            "測試裝備系統",
+            "測試等級提升",
+            "測試物品使用",
+            "重置角色數據"
+          ];
+
+          const selectedOption = prompt(`選擇測試選項：\n${testOptions.map((opt, i) => `${i + 1}. ${opt}`).join('\n')}`);
+          const optionIndex = parseInt(selectedOption) - 1;
+
+          if (optionIndex >= 0 && optionIndex < testOptions.length) {
+            switch (optionIndex) {
+              case 0: // 模擬戰鬥傷害
+                characterManager.updateCharacter({
+                  resources: {
+                    hp: {
+                      current: Math.max(0, characterManager.character.resources.hp.current - 10)
+                    }
+                  }
+                });
+                break;
+              case 1: // 使用治療藥水
+                characterManager.updateCharacter({
+                  resources: {
+                    hp: {
+                      current: Math.min(characterManager.character.resources.hp.max,
+                        characterManager.character.resources.hp.current + 15)
+                    }
+                  }
+                });
+                break;
+              case 2: // 消耗魔力
+                characterManager.updateCharacter({
+                  resources: {
+                    mp: {
+                      current: Math.max(0, characterManager.character.resources.mp.current - 5)
+                    }
+                  }
+                });
+                break;
+              case 3: // 獲得經驗值
+                characterManager.updateCharacter({
+                  resources: {
+                    experience: {
+                      current: characterManager.character.resources.experience.current + 50
+                    }
+                  }
+                });
+                break;
+              case 4: // 獲得金幣
+                characterManager.updateCharacter({
+                  inventory: {
+                    ...characterManager.character.inventory,
+                    gold: characterManager.character.inventory.gold + 20
+                  }
+                });
+                break;
+              case 5: // 測試擲骰整合功能
+                const diceTestOptions = ["D20 測試", "D12 測試", "D10 測試", "D6 測試"];
+                const diceChoice = prompt(`選擇擲骰測試：\n${diceTestOptions.map((opt, i) => `${i + 1}. ${opt}`).join('\n')}`);
+                const diceIndex = parseInt(diceChoice) - 1;
+
+                if (diceIndex >= 0 && diceIndex < diceTestOptions.length) {
+                  const diceTypes = ['d20', 'd12', 'd10', 'd6'];
+                  const selectedDice = diceTypes[diceIndex];
+
+                  // 模擬故事管理器等待擲骰狀態
+                  if (storyManager) {
+                    storyManager.waitingForDice = selectedDice;
+                    showGameNotification(`設置等待 ${selectedDice.toUpperCase()} 骰子，請點擊對應的擲骰按鈕測試整合功能`);
+
+                    // 高亮對應的骰子按鈕
+                    storyManager.highlightDiceButton(selectedDice);
+
+                    // 模擬添加測試故事內容
+                    storyManager.appendToStory('system-message', `🎮 **測試模式**：請擲 ${selectedDice.toUpperCase()} 骰子測試整合功能！`);
+                  } else {
+                    showGameNotification("故事管理器尚未初始化");
+                  }
+                } else {
+                  showGameNotification("無效的擲骰選擇");
+                }
+                return; // 早期返回，不執行保存
+
+              case 6: // 測試裝備系統
+                const equipTestOptions = [
+                  "獲得魔法劍 (+3力量, +2敏捷)",
+                  "獲得鋼鐵鎧甲 (+10HP, +1力量)",
+                  "獲得智慧法杖 (+4智力, +5MP)",
+                  "卸下當前武器",
+                  "卸下當前防具"
+                ];
+                const equipChoice = prompt(`裝備測試：\n${equipTestOptions.map((opt, i) => `${i + 1}. ${opt}`).join('\n')}`);
+                const equipIndex = parseInt(equipChoice) - 1;
+
+                if (equipIndex >= 0 && equipIndex < equipTestOptions.length) {
+                  switch (equipIndex) {
+                    case 0: // 魔法劍
+                      characterManager.addItem({
+                        name: "魔法劍",
+                        icon: "ri-sword-line",
+                        type: "weapon",
+                        stats: { strength: 3, dexterity: 2 },
+                        description: "散發神秘光芒的魔法劍"
+                      });
+                      characterManager.equipItem({
+                        name: "魔法劍",
+                        icon: "ri-sword-line",
+                        type: "weapon",
+                        stats: { strength: 3, dexterity: 2 },
+                        description: "散發神秘光芒的魔法劍"
+                      });
+                      showGameNotification("獲得並裝備了魔法劍！");
+                      break;
+                    case 1: // 鋼鐵鎧甲
+                      characterManager.addItem({
+                        name: "鋼鐵鎧甲",
+                        icon: "ri-shield-line",
+                        type: "armor",
+                        stats: { strength: 1 },
+                        hpBonus: 10,
+                        description: "厚重的鋼鐵鎧甲"
+                      });
+                      characterManager.equipItem({
+                        name: "鋼鐵鎧甲",
+                        icon: "ri-shield-line",
+                        type: "armor",
+                        stats: { strength: 1 },
+                        hpBonus: 10,
+                        description: "厚重的鋼鐵鎧甲"
+                      });
+                      showGameNotification("獲得並裝備了鋼鐵鎧甲！");
+                      break;
+                    case 2: // 智慧法杖
+                      characterManager.addItem({
+                        name: "智慧法杖",
+                        icon: "ri-magic-line",
+                        type: "weapon",
+                        stats: { intelligence: 4 },
+                        mpBonus: 5,
+                        description: "蘊含古老智慧的法杖"
+                      });
+                      characterManager.equipItem({
+                        name: "智慧法杖",
+                        icon: "ri-magic-line",
+                        type: "weapon",
+                        stats: { intelligence: 4 },
+                        mpBonus: 5,
+                        description: "蘊含古老智慧的法杖"
+                      });
+                      showGameNotification("獲得並裝備了智慧法杖！");
+                      break;
+                    case 3: // 卸下武器
+                      const currentWeapon = characterManager.character.inventory.weapons.find(w => w.equipped);
+                      if (currentWeapon) {
+                        characterManager.unequipItem(currentWeapon.name);
+                        showGameNotification(`卸下了 ${currentWeapon.name}`);
+                      } else {
+                        showGameNotification("沒有裝備武器");
+                      }
+                      break;
+                    case 4: // 卸下防具
+                      const currentArmor = characterManager.character.inventory.armor.find(a => a.equipped);
+                      if (currentArmor) {
+                        characterManager.unequipItem(currentArmor.name);
+                        showGameNotification(`卸下了 ${currentArmor.name}`);
+                      } else {
+                        showGameNotification("沒有裝備防具");
+                      }
+                      break;
+                  }
+                }
+                return; // 早期返回
+
+              case 7: // 測試等級提升
+                const expNeeded = characterManager.character.resources.experience.max - characterManager.character.resources.experience.current;
+                characterManager.updateCharacter({
+                  resources: {
+                    experience: {
+                      current: characterManager.character.resources.experience.current + expNeeded
+                    }
+                  }
+                });
+                showGameNotification("經驗值已滿，觸發等級提升！");
+                return; // 早期返回
+
+              case 8: // 測試物品使用
+                const itemTestOptions = [
+                  "使用治療藥水",
+                  "使用魔力藥水",
+                  "添加力量藥劑並使用"
+                ];
+                const itemChoice = prompt(`物品測試：\n${itemTestOptions.map((opt, i) => `${i + 1}. ${opt}`).join('\n')}`);
+                const itemIndex = parseInt(itemChoice) - 1;
+
+                if (itemIndex >= 0 && itemIndex < itemTestOptions.length) {
+                  switch (itemIndex) {
+                    case 0: // 使用治療藥水
+                      if (characterManager.useItem("治療藥水")) {
+                        showGameNotification("使用了治療藥水");
+                      } else {
+                        showGameNotification("沒有治療藥水");
+                      }
+                      break;
+                    case 1: // 使用魔力藥水
+                      if (characterManager.useItem("魔力藥水")) {
+                        showGameNotification("使用了魔力藥水");
+                      } else {
+                        showGameNotification("沒有魔力藥水");
+                      }
+                      break;
+                    case 2: // 添加並使用力量藥劑
+                      characterManager.addItem({
+                        name: "力量藥劑",
+                        icon: "ri-flask-fill",
+                        quantity: 1,
+                        description: "暫時增加 +2 力量"
+                      });
+                      characterManager.useItem("力量藥劑");
+                      showGameNotification("獲得並使用了力量藥劑！");
+                      break;
+                  }
+                }
+                return; // 早期返回
+
+              case 9: // 重置角色數據
+                characterManager.resetCharacter();
+                showGameNotification("角色數據已重置");
+                break;
+            }
+
+            if (optionIndex < 5) {
+              // 保存角色數據
+              characterManager.saveCharacter();
+              showGameNotification(`測試完成：${testOptions[optionIndex]}`);
+            }
+          }
+        } else {
+          showGameNotification("角色管理器尚未初始化");
+        }
       });
 
       function showGameNotification(message) {
